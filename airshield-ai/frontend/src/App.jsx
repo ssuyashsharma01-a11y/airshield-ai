@@ -3,31 +3,15 @@ import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 
 export default function App() {
-  // Default fallback user so page never crashes on hard refresh
-  const [userProfile, setUserProfile] = useState({
-    name: 'Suyash Sharma',
-    age: '21',
-    location: 'Sector 17, Chandigarh',
-    conditions: ['Asthma'],
-    severity: 'Moderate'
-  });
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [user, setUser] = useState(null);
 
   return (
-    <>
-      {!isAuthenticated ? (
-        <LoginPage 
-          onComplete={(profile) => {
-            setUserProfile(profile);
-            setIsAuthenticated(true);
-          }} 
-        />
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      {!user ? (
+        <LoginPage onLogin={(userData) => setUser(userData)} />
       ) : (
-        <Dashboard 
-          user={userProfile} 
-          onLogout={() => setIsAuthenticated(false)} 
-        />
+        <Dashboard user={user} onLogout={() => setUser(null)} />
       )}
-    </>
+    </div>
   );
 }

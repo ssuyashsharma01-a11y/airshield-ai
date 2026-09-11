@@ -2,7 +2,7 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   ShieldCheck, Activity, Clock, Sun, Flame, 
-  Sparkles, HeartPulse, RefreshCw, Apple
+  Sparkles, HeartPulse, RefreshCw, Apple, LogOut 
 } from 'lucide-react';
 
 const BACKEND_URL = "https://airshield-ai.onrender.com";
@@ -14,31 +14,20 @@ const STATIONS = [
   { id: 'chandigarh', name: 'Chandigarh (Sec 22)', lat: 30.7333, lon: 76.7794, baseMockPm: 28 }
 ];
 
-const INITIAL_FORECAST = [
-  { time: "Now", aqi: 45, pm25: 27 },
-  { time: "3 AM", aqi: 58, pm25: 35 },
-  { time: "6 AM", aqi: 75, pm25: 42 },
-  { time: "9 AM", aqi: 52, pm25: 31 },
-  { time: "12 PM", aqi: 38, pm25: 22 },
-  { time: "3 PM", aqi: 34, pm25: 19 },
-  { time: "6 PM", aqi: 48, pm25: 29 },
-  { time: "9 PM", aqi: 68, pm25: 39 }
-];
-
-export default function Dashboard() {
+export default function Dashboard({ user, onLogout }) {
   const [selectedStation, setSelectedStation] = useState(STATIONS[0]);
   const [isLive, setIsLive] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [currentPm, setCurrentPm] = useState(27);
-  const [forecastData, setForecastData] = useState(INITIAL_FORECAST);
+  const [currentPm, setCurrentPm] = useState(31);
+  const [forecastData, setForecastData] = useState([]);
   const [windows, setWindows] = useState({
     safeWindow: "3 PM (Safe Valley)",
     safeAqi: 34,
-    dangerWindow: "6 AM (Peak Inversion)",
-    dangerAqi: 75
+    dangerWindow: "6 AM (Peak Thermal Inversion)",
+    dangerAqi: 82
   });
 
-  const fetchLiveAqi = async () => {
+  const fetchInference = async () => {
     setLoading(true);
     try {
       let pm = selectedStation.baseMockPm;
@@ -65,21 +54,21 @@ export default function Dashboard() {
         }
       }
     } catch (err) {
-      console.error("ML server fallback:", err);
+      console.error("Backend error:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLiveAqi();
+    fetchInference();
   }, [selectedStation, isLive]);
 
   const currentAqi = Math.round(currentPm <= 30 ? (50 / 30) * currentPm : 50 + ((currentPm - 30) * 1.66));
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      {/* Header */}
+      {/* Navigation Header */}
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-8 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
@@ -92,7 +81,9 @@ export default function Dashboard() {
                 Coupled Forecaster
               </span>
             </div>
-            <p className="text-xs text-slate-400">Station: {selectedStation.name} • User: Suyash Sharma (21 yrs)</p>
+            <p className="text-xs text-slate-400">
+              Station: {selectedStation.name} • User: {user?.name || "Suyash Sharma"} ({user?.age || "21"} yrs)
+            </p>
           </div>
         </div>
 
@@ -123,9 +114,19 @@ export default function Dashboard() {
             {isLive ? 'Live Sync' : 'Mock Active'}
           </button>
 
-          <button onClick={fetchLiveAqi} className="p-2 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-slate-300">
+          <button onClick={fetchInference} className="p-2 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-slate-300">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
+
+          {onLogout && (
+            <button 
+              onClick={onLogout} 
+              title="Logout"
+              className="p-2 bg-rose-950/30 border border-rose-800/40 hover:bg-rose-900/40 rounded-lg text-rose-300"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -152,8 +153,8 @@ export default function Dashboard() {
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white">Suyash Sharma</h3>
-                <span className="text-xs text-slate-400">Asthma • Moderate</span>
+                <h3 className="text-sm font-bold text-white">{user?.name || "Suyash Sharma"}</h3>
+                <span className="text-xs text-slate-400">{user?.condition || "Asthma • Moderate"}</span>
               </div>
               <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
                 Shield Active
@@ -184,7 +185,7 @@ export default function Dashboard() {
 
         {/* Right Column */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Chart Card */}
+          {/* Dynamic ML Forecast Curve */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -195,18 +196,21 @@ export default function Dashboard() {
                 Sub-50ms Inference
               </span>
             </div>
-            <div className="h-48 w-full">
+            <div className="h-52 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={forecastData}>
+                <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="aqiGradPro" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.45}/>
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.5}/>
                       <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.02}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="time" stroke="#64748b" fontSize={11} tickLine={false} />
-                  <YAxis domain={[0, 350]} stroke="#64748b" fontSize={11} tickLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} />
+                  <YAxis domain={['dataMin - 10', 'dataMax + 20']} stroke="#64748b" fontSize={11} tickLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                    formatter={(value) => [`${value} AQI`, 'Forecast']} 
+                  />
                   <Area type="monotone" dataKey="aqi" stroke="#38bdf8" strokeWidth={2.5} fillOpacity={1} fill="url(#aqiGradPro)" />
                 </AreaChart>
               </ResponsiveContainer>
