@@ -1,4 +1,4 @@
-ï»¿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Wind, 
   HeartPulse, 
@@ -250,7 +250,7 @@ export default function Dashboard({ user = {}, onLogout }) {
           <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-sky-400" />
             Station: <strong className="text-slate-300">{selectedCity}</strong>
-            <span className="text-slate-500">â€¢ User: {currentUser.name} ({currentUser.age} yrs)</span>
+            <span className="text-slate-500">• User: {currentUser.name} ({currentUser.age} yrs)</span>
           </p>
         </div>
 
@@ -350,7 +350,7 @@ export default function Dashboard({ user = {}, onLogout }) {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-3">
-              Measured PM2.5: <strong className="text-slate-200">{aqiData.pm25} Âµg/mÂ³</strong>. 
+              Measured PM2.5: <strong className="text-slate-200">{aqiData.pm25} µg/m³</strong>. 
               {aqiData.currentAqi <= 100 
                 ? " Minimal mucosal stress detected. Baseline physiological thresholds stable."
                 : " Elevated particulate stress. Triggers airway hyper-reactivity in sensitive cohorts."}
@@ -367,7 +367,7 @@ export default function Dashboard({ user = {}, onLogout }) {
                 <div>
                   <h3 className="text-sm font-bold text-white">{currentUser.name}</h3>
                   <p className="text-xs text-slate-400">
-                    {currentUser.conditions.join(", ")} â€¢ {currentUser.severity}
+                    {currentUser.conditions.join(", ")} • {currentUser.severity}
                   </p>
                 </div>
               </div>
