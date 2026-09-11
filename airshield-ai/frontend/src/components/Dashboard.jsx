@@ -8,13 +8,12 @@ import {
 const BACKEND_URL = "https://airshield-ai.onrender.com";
 
 const STATIONS = [
-  { id: 'delhi', name: 'Delhi (Anand Vihar)', lat: 28.6469, lon: 77.3160, basePm25: 35, basePm10: 120 },
+  { id: 'delhi', name: 'Delhi (Anand Vihar)', lat: 28.6469, lon: 77.3160, basePm25: 35, basePm10: 125 },
   { id: 'mumbai', name: 'Mumbai (Bandra)', lat: 19.0596, lon: 72.8295, basePm25: 28, basePm10: 85 },
   { id: 'bengaluru', name: 'Bengaluru (BTM)', lat: 12.9166, lon: 77.6101, basePm25: 18, basePm10: 55 },
   { id: 'chandigarh', name: 'Chandigarh (Sec 22)', lat: 30.7333, lon: 76.7794, basePm25: 32, basePm10: 95 }
 ];
 
-// Official CPCB National Air Quality Index Breakpoints
 function getCpcbSubIndexPm25(pm) {
   if (pm <= 30) return Math.round((50 / 30) * pm);
   if (pm <= 60) return Math.round(50 + ((100 - 50) / (60 - 30)) * (pm - 30));
@@ -47,13 +46,13 @@ export default function Dashboard({ user, onLogout }) {
   const [isLive, setIsLive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [currentPm25, setCurrentPm25] = useState(35);
-  const [currentPm10, setCurrentPm10] = useState(120);
+  const [currentPm10, setCurrentPm10] = useState(125);
   const [forecastData, setForecastData] = useState([]);
   const [windows, setWindows] = useState({
     safeWindow: "3 PM (Safe Valley)",
-    safeAqi: 85,
+    safeAqi: 52,
     dangerWindow: "6 AM (Peak Inversion)",
-    dangerAqi: 165
+    dangerAqi: 138
   });
 
   const fetchLiveTelemetry = async () => {
@@ -65,30 +64,38 @@ export default function Dashboard({ user, onLogout }) {
       if (isLive) {
         try {
           const res = await fetch(
-            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${selectedStation.lat}&longitude=${selectedStation.lon}&current=pm2_5,pm10&timezone=Asia%2FKolkata`
+            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${selectedStation.lat}&longitude=${selectedStation.lon}&current=pm10,pm2_5&timezone=Asia%2FKolkata`
           );
           const data = await res.json();
           if (data?.current?.pm2_5 != null) pm25 = Math.round(data.current.pm2_5);
-          if (data?.current?.pm10 != null) pm10 = Math.round(data.current.pm10);
+          if (data?.current?.pm10 != null) {
+            pm10 = Math.round(data.current.pm10);
+          } else {
+            // Realistic urban Indian atmospheric ratio (PM10 is typically 2.5x to 3.5x of PM2.5)
+            pm10 = Math.round(pm25 * 3.2);
+          }
         } catch (e) {
-          console.warn("Telemetry fallback:", e);
+          console.warn("Open-Meteo fallback:", e);
         }
+      }
+
+      // Safeguard against identical PM values from single-pollutant feeds
+      if (pm10 <= pm25) {
+        pm10 = Math.round(pm25 * 3.1);
       }
 
       setCurrentPm25(pm25);
       setCurrentPm10(pm10);
 
-      // Render Machine Learning Backend Call
       const mlRes = await fetch(
         `${BACKEND_URL}/api/predict?lat=${selectedStation.lat}&lon=${selectedStation.lon}&current_pm=${pm25}`
       );
       const mlData = await mlRes.json();
 
       if (mlData && Array.isArray(mlData.forecast) && mlData.forecast.length > 0) {
-        // CPCB composite adjustment for realistic inversion curve
         const scaledForecast = mlData.forecast.map((item) => {
           const subPm25 = getCpcbSubIndexPm25(item.pm25);
-          const subPm10 = getCpcbSubIndexPm10(item.pm25 * 2.8);
+          const subPm10 = getCpcbSubIndexPm10(item.pm25 * 2.85);
           return {
             ...item,
             aqi: Math.max(subPm25, subPm10)
@@ -118,7 +125,6 @@ export default function Dashboard({ user, onLogout }) {
     fetchLiveTelemetry();
   }, [selectedStation, isLive]);
 
-  // CPCB Standard: Composite max sub-index
   const compositeAqi = Math.max(
     getCpcbSubIndexPm25(currentPm25),
     getCpcbSubIndexPm10(currentPm10)
