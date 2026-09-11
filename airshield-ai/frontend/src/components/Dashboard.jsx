@@ -1,9 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
-  ShieldCheck, AlertTriangle, Activity, Wind, 
-  Droplets, Thermometer, Clock, Sun, Flame, 
-  Sparkles, HeartPulse, RefreshCw, LogOut, ChevronDown 
+  ShieldCheck, Activity, Clock, Sun, Flame, 
+  Sparkles, HeartPulse, RefreshCw, Apple
 } from 'lucide-react';
 
 const BACKEND_URL = "https://airshield-ai.onrender.com";
@@ -15,12 +14,23 @@ const STATIONS = [
   { id: 'chandigarh', name: 'Chandigarh (Sec 22)', lat: 30.7333, lon: 76.7794, baseMockPm: 28 }
 ];
 
-export default function Dashboard({ onLogout }) {
+const INITIAL_FORECAST = [
+  { time: "Now", aqi: 45, pm25: 27 },
+  { time: "3 AM", aqi: 58, pm25: 35 },
+  { time: "6 AM", aqi: 75, pm25: 42 },
+  { time: "9 AM", aqi: 52, pm25: 31 },
+  { time: "12 PM", aqi: 38, pm25: 22 },
+  { time: "3 PM", aqi: 34, pm25: 19 },
+  { time: "6 PM", aqi: 48, pm25: 29 },
+  { time: "9 PM", aqi: 68, pm25: 39 }
+];
+
+export default function Dashboard() {
   const [selectedStation, setSelectedStation] = useState(STATIONS[0]);
   const [isLive, setIsLive] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [currentPm, setCurrentPm] = useState(31);
-  const [forecastData, setForecastData] = useState([]);
+  const [currentPm, setCurrentPm] = useState(27);
+  const [forecastData, setForecastData] = useState(INITIAL_FORECAST);
   const [windows, setWindows] = useState({
     safeWindow: "3 PM (Safe Valley)",
     safeAqi: 34,
@@ -45,18 +55,17 @@ export default function Dashboard({ onLogout }) {
       }
       setCurrentPm(pm);
 
-      // Call Render Machine Learning Backend
       const mlRes = await fetch(`${BACKEND_URL}/api/predict?lat=${selectedStation.lat}&lon=${selectedStation.lon}&current_pm=${pm}`);
       const mlData = await mlRes.json();
 
-      if (mlData && mlData.forecast) {
+      if (mlData && Array.isArray(mlData.forecast) && mlData.forecast.length > 0) {
         setForecastData(mlData.forecast);
         if (mlData.windows) {
           setWindows(mlData.windows);
         }
       }
     } catch (err) {
-      console.error("Inference fetch failed, fallback:", err);
+      console.error("ML server fallback:", err);
     } finally {
       setLoading(false);
     }
@@ -66,10 +75,11 @@ export default function Dashboard({ onLogout }) {
     fetchLiveAqi();
   }, [selectedStation, isLive]);
 
-  const currentAqi = Math.round(currentPm <= 30 ? (50/30)*currentPm : 50 + ((currentPm-30)*1.66));
+  const currentAqi = Math.round(currentPm <= 30 ? (50 / 30) * currentPm : 50 + ((currentPm - 30) * 1.66));
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
+      {/* Header */}
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-8 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
@@ -87,6 +97,14 @@ export default function Dashboard({ onLogout }) {
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl">
+            {['Ramesh', 'Aarav', 'Priya'].map((p, idx) => (
+              <span key={p} className={`text-xs px-2.5 py-1 rounded-lg font-medium cursor-pointer ${idx === 0 ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'}`}>
+                {p}
+              </span>
+            ))}
+          </div>
+
           <select 
             value={selectedStation.id} 
             onChange={(e) => setSelectedStation(STATIONS.find(s => s.id === e.target.value))}
@@ -111,7 +129,9 @@ export default function Dashboard({ onLogout }) {
         </div>
       </header>
 
+      {/* Main Grid */}
       <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column */}
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-2">
@@ -142,10 +162,29 @@ export default function Dashboard({ onLogout }) {
             <div className="p-3 bg-emerald-950/20 border border-emerald-800/40 rounded-xl text-xs text-emerald-300">
               Physiological airway limits stable. Routine daily maintenance running.
             </div>
+
+            <div className="space-y-2 pt-2 border-t border-slate-800/60">
+              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+                Prescribed Clinical Actions
+              </span>
+              <ul className="space-y-2 text-xs text-slate-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 font-bold">›</span> Keep rescue bronchodilator within reach; verify canister dosage.
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 font-bold">›</span> Pre-activate HEPA air purifier 45 minutes prior to evening spikes.
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 font-bold">›</span> Opt for indoor low-exertion walking regimens rather than outdoor walks.
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
 
+        {/* Right Column */}
         <div className="lg:col-span-8 space-y-6">
+          {/* Chart Card */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -156,24 +195,25 @@ export default function Dashboard({ onLogout }) {
                 Sub-50ms Inference
               </span>
             </div>
-            <div className="h-44 w-full">
+            <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={forecastData}>
                   <defs>
-                    <linearGradient id="aqiGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0}/>
+                    <linearGradient id="aqiGradPro" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.45}/>
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.02}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="time" stroke="#64748b" fontSize={11} />
-                  <YAxis domain={[0, 350]} stroke="#64748b" fontSize={11} />
+                  <XAxis dataKey="time" stroke="#64748b" fontSize={11} tickLine={false} />
+                  <YAxis domain={[0, 350]} stroke="#64748b" fontSize={11} tickLine={false} />
                   <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }} />
-                  <Area type="monotone" dataKey="aqi" stroke="#38bdf8" strokeWidth={2.5} fillOpacity={1} fill="url(#aqiGrad)" />
+                  <Area type="monotone" dataKey="aqi" stroke="#38bdf8" strokeWidth={2.5} fillOpacity={1} fill="url(#aqiGradPro)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
+          {/* Pollution Window Planner */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -202,6 +242,49 @@ export default function Dashboard({ onLogout }) {
                   <p className="text-xs text-slate-300 mt-1">Thermal trapping peak. Keep purifiers active. Estimated AQI: ~{windows.dangerAqi}.</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Bio-Defense Nutrition Engine */}
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Apple className="w-4 h-4 text-emerald-400" /> Bio-Defense Nutrition Protocol
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Targeted cellular antioxidants combating real-time PM2.5 oxidative inflammation
+                </p>
+              </div>
+              <span className="text-[11px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded font-medium flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Cellular Shield
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { 
+                  title: "Airway Clearance", 
+                  desc: "Organic Jaggery (Gud) + warm ginger water to facilitate tracheal mucous particle expulsion." 
+                },
+                { 
+                  title: "Cellular Radical Neutralizer", 
+                  desc: "Fresh Indian Gooseberry (Amla) extract or citrus for bioavailable Vitamin C radical barrier." 
+                },
+                { 
+                  title: "Anti-Inflammatory Defense", 
+                  desc: "Curcumin (Haldi) extract paired with piperine black pepper to suppress bronchial spasms." 
+                }
+              ].map((nut, i) => (
+                <div key={i} className="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-2">
+                    <HeartPulse className="w-3.5 h-3.5" /> Protocol {i + 1} • {nut.title}
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed font-normal">
+                    {nut.desc}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
