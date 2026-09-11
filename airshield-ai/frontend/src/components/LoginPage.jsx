@@ -1,19 +1,19 @@
 ﻿import React, { useState } from 'react';
-import { ShieldAlert, Activity, UserCheck } from 'lucide-react';
+import { ShieldAlert, UserCheck } from 'lucide-react';
 
-export default function LoginPage({ onLogin, setIsLoggedIn, setUser }) {
+export default function LoginPage({ onComplete, onLogin }) {
   const [formData, setFormData] = useState({
     name: "Suyash Sharma",
     age: "21",
     location: "Delhi (Anand Vihar)",
-    condition: "Asthma"
+    condition: "Asthma • Moderate"
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const loginFn = onLogin || setIsLoggedIn || setUser;
-    if (typeof loginFn === 'function') {
-      loginFn(formData);
+    const submitFn = onComplete || onLogin;
+    if (typeof submitFn === 'function') {
+      submitFn(formData);
     }
   };
 
@@ -60,7 +60,7 @@ export default function LoginPage({ onLogin, setIsLoggedIn, setUser }) {
                 onChange={(e) => setFormData({...formData, condition: e.target.value})}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
               >
-                <option value="Asthma">Asthma</option>
+                <option value="Asthma • Moderate">Asthma</option>
                 <option value="COPD">COPD</option>
                 <option value="Allergic Rhinitis">Allergic Rhinitis</option>
                 <option value="None">None</option>
@@ -70,7 +70,7 @@ export default function LoginPage({ onLogin, setIsLoggedIn, setUser }) {
 
           <button 
             type="submit"
-            className="w-full mt-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition flex items-center justify-center gap-2"
+            className="w-full mt-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
           >
             <UserCheck className="w-4 h-4" /> Initialize Shield Telemetry
           </button>
