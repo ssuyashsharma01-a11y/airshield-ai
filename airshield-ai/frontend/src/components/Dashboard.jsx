@@ -4,7 +4,7 @@ import {
   ShieldCheck, Activity, Clock, Sun, Flame, 
   Sparkles, HeartPulse, RefreshCw, Apple, LogOut,
   Wind, Droplets, Thermometer, CheckCircle2, AlertTriangle,
-  GitBranch, ShieldAlert
+  GitBranch, Database
 } from 'lucide-react';
 
 const BACKEND_URL = "https://airshield-ai.onrender.com";
@@ -59,9 +59,9 @@ export default function Dashboard({ user, onLogout }) {
   const [liveModelAqi, setLiveModelAqi] = useState(115);
   const [forecastData, setForecastData] = useState([]);
   const [windows, setWindows] = useState({
-    safeWindow: "3 PM (Safe Valley)",
+    safeWindow: "3 PM (Optimal Window)",
     safeAqi: 72,
-    dangerWindow: "6 AM (Peak Inversion)",
+    dangerWindow: "6 AM (Peak Accumulation)",
     dangerAqi: 156
   });
 
@@ -108,7 +108,14 @@ export default function Dashboard({ user, onLogout }) {
       if (mlData && Array.isArray(mlData.forecast) && mlData.forecast.length > 0) {
         setForecastData(mlData.forecast);
         setLiveModelAqi(mlData.forecast[0].aqi || cpcbComposite);
-        if (mlData.windows) setWindows(mlData.windows);
+        if (mlData.windows) {
+          setWindows({
+            safeWindow: mlData.windows.safeWindow.replace("Safe Valley", "Optimal Window"),
+            safeAqi: mlData.windows.safeAqi,
+            dangerWindow: mlData.windows.dangerWindow.replace("Peak Thermal Inversion", "Peak Accumulation Risk"),
+            dangerAqi: mlData.windows.dangerAqi
+          });
+        }
       } else {
         setLiveModelAqi(cpcbComposite);
       }
@@ -125,7 +132,7 @@ export default function Dashboard({ user, onLogout }) {
   }, [selectedStation, isLive]);
 
   const aqiInfo = getAqiCategory(liveModelAqi);
-  const canGoOutside = userMode === "sensitive" ? liveModelAqi <= 95 : liveModelAqi <= 125;
+  const isRecommendedWindow = userMode === "sensitive" ? liveModelAqi <= 95 : liveModelAqi <= 125;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
@@ -191,14 +198,14 @@ export default function Dashboard({ user, onLogout }) {
 
       {/* Decision-First Banner with User-Configured Risk Profile */}
       <div className="max-w-7xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className={`p-5 rounded-2xl border flex items-center justify-between ${canGoOutside ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300' : 'bg-amber-950/30 border-amber-800/50 text-amber-300'}`}>
+        <div className={`p-5 rounded-2xl border flex items-center justify-between ${isRecommendedWindow ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300' : 'bg-amber-950/30 border-amber-800/50 text-amber-300'}`}>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider block text-slate-400">Outdoor Transit Verdict</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider block text-slate-400">Current Outdoor Assessment</span>
             <div className="text-2xl font-black mt-1 flex items-center gap-2">
-              {canGoOutside ? <CheckCircle2 className="w-6 h-6 text-emerald-400" /> : <AlertTriangle className="w-6 h-6 text-amber-400" />}
-              {canGoOutside ? "Safe for Commute / Transit" : "Postpone Strenuous Workouts"}
+              {isRecommendedWindow ? <CheckCircle2 className="w-6 h-6 text-emerald-400" /> : <AlertTriangle className="w-6 h-6 text-amber-400" />}
+              {isRecommendedWindow ? "Recommended Outdoor Window" : "Elevated Exposure Period"}
             </div>
-            <p className="text-xs text-slate-300 mt-1">Safest window: <strong>{windows.safeWindow}</strong></p>
+            <p className="text-xs text-slate-300 mt-1">Lower-exposure slot: <strong>{windows.safeWindow}</strong></p>
           </div>
         </div>
 
@@ -214,7 +221,7 @@ export default function Dashboard({ user, onLogout }) {
         {/* User Selectable Sensitivity Mode */}
         <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">User Sensitivity Profile</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sensitivity Profile</span>
             <span className="text-[10px] text-cyan-400 font-semibold uppercase">Self-Configured</span>
           </div>
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
@@ -253,6 +260,24 @@ export default function Dashboard({ user, onLogout }) {
             </p>
           </div>
 
+          {/* ML Feature Set Verification Card */}
+          <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <Database className="w-3.5 h-3.5 text-cyan-400" /> Active Model Input Vector
+              </span>
+              <span className="text-[10px] text-cyan-400 font-mono">6 Features</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[11px]">
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ PM2.5</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ PM10</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Ambient Temp</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Rel Humidity</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Wind Velocity</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Diurnal Hour</span>
+            </div>
+          </div>
+
           {/* Explainable AI with ML Feature Importance Progress Bars */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm space-y-3">
             <div className="flex items-center justify-between">
@@ -266,7 +291,7 @@ export default function Dashboard({ user, onLogout }) {
             <div className="space-y-3 pt-2">
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-300 flex items-center gap-1.5"><Thermometer className="w-3.5 h-3.5 text-rose-400" /> Boundary Layer Inversion</span>
+                  <span className="text-slate-300 flex items-center gap-1.5"><Thermometer className="w-3.5 h-3.5 text-rose-400" /> Atmospheric Stability Risk</span>
                   <span className="font-semibold text-rose-400">42% Impact</span>
                 </div>
                 <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-800">
@@ -316,7 +341,7 @@ export default function Dashboard({ user, onLogout }) {
                 <span className="text-cyan-400 font-bold">›</span> Reschedule outdoor cardio workouts to afternoon solar dispersion slots (2 PM - 5 PM).
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-cyan-400 font-bold">›</span> Pre-activate indoor HEPA air filtration systems ahead of dawn thermal spikes.
+                <span className="text-cyan-400 font-bold">›</span> Pre-activate indoor HEPA air filtration systems ahead of dawn stagnation spikes.
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-cyan-400 font-bold">›</span> Wear certified N95 masks when navigating heavy congestion intersections.
@@ -327,15 +352,15 @@ export default function Dashboard({ user, onLogout }) {
 
         {/* Right Column */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Dynamic ML Forecast Curve */}
+          {/* Dynamic ML Forecast Curve with Clear 24-Hour Horizon */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-bold text-white">Coupled Atmospheric Inversion Forecast ({selectedStation.name})</h2>
-                <p className="text-xs text-slate-400">Random Forest Regressor fit on CPCB historical observations fused with live microclimate covariates</p>
+                <h2 className="text-sm font-bold text-white">Atmospheric Particulate Forecast ({selectedStation.name})</h2>
+                <p className="text-xs text-slate-400">Forecast Horizon: Next 24 Hours • Random Forest Regressor fit on CPCB observations</p>
               </div>
-              <span className="text-[10px] font-bold px-2 py-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
-                Live Inference
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
+                Diurnal Resolution (00:00 - 21:00)
               </span>
             </div>
             <div className="h-56 w-full">
@@ -373,7 +398,7 @@ export default function Dashboard({ user, onLogout }) {
                   <Sun className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">Safest Outdoor Period</span>
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">Optimal Outdoor Window</span>
                   <strong className="text-base text-white mt-0.5 block">{windows.safeWindow}</strong>
                   <p className="text-xs text-slate-300 mt-1">Solar boundary breakdown encourages particulate flushing. Estimated AQI: ~{windows.safeAqi}.</p>
                 </div>
@@ -383,15 +408,15 @@ export default function Dashboard({ user, onLogout }) {
                   <Flame className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">High Danger Exposure Period</span>
+                  <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">Peak Particulate Accumulation Risk</span>
                   <strong className="text-base text-white mt-0.5 block">{windows.dangerWindow}</strong>
-                  <p className="text-xs text-slate-300 mt-1">Thermal ground cap traps vehicle exhaust near surface. Keep purifiers running. Estimated AQI: ~{windows.dangerAqi}.</p>
+                  <p className="text-xs text-slate-300 mt-1">Surface stagnation traps exhaust near ground level. Keep purifiers running. Estimated AQI: ~{windows.dangerAqi}.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Lifestyle & Dietary Antioxidant Support */}
+          {/* Safe Lifestyle & Traditional Nutritional Awareness */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -399,7 +424,7 @@ export default function Dashboard({ user, onLogout }) {
                   <Apple className="w-4 h-4 text-emerald-400" /> Lifestyle & Nutritional Awareness
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Dietary foods traditionally associated with antioxidant support during high pollution exposure
+                  Nutritional awareness & traditional dietary foods commonly consumed during high pollution exposure
                 </p>
               </div>
               <span className="text-[11px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded font-medium flex items-center gap-1">
@@ -411,15 +436,15 @@ export default function Dashboard({ user, onLogout }) {
               {[
                 { 
                   title: "Airway Hydration", 
-                  desc: "Traditional warm jaggery (Gud) and ginger infusion known to encourage upper respiratory comfort." 
+                  desc: "Traditional warm jaggery (Gud) and ginger infusion commonly consumed for general upper respiratory comfort." 
                 },
                 { 
                   title: "Antioxidant Rich Foods", 
-                  desc: "Indian Gooseberry (Amla) or citrus fruits providing natural Vitamin C for general wellness." 
+                  desc: "Fresh Indian Gooseberry (Amla) or citrus fruits providing natural dietary Vitamin C for daily wellness." 
                 },
                 { 
                   title: "Dietary Botanical Support", 
-                  desc: "Curcumin turmeric preparation with black pepper commonly recognized for dietary antioxidant properties." 
+                  desc: "Traditional golden turmeric infusion with black pepper commonly recognized for supportive dietary properties." 
                 }
               ].map((nut, i) => (
                 <div key={i} className="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between">
