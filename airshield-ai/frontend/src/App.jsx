@@ -8,7 +8,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
       {!user ? (
-        <LoginPage onLogin={(userData) => setUser(userData)} />
+        <LoginPage onComplete={(userData) => setUser(userData || { name: "Suyash Sharma", age: 21, condition: "Asthma • Moderate" })} />
       ) : (
         <Dashboard user={user} onLogout={() => setUser(null)} />
       )}
