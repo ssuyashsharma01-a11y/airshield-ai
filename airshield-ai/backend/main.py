@@ -65,15 +65,18 @@ def predict_aqi(lat: float = 28.6469, lon: float = 77.3160, current_pm: float = 
         except Exception:
             pass
 
+        # Exact composite base index
+        base_cpcb_aqi = round(max(get_cpcb_subindex_pm25(current_pm), get_cpcb_subindex_pm10(current_pm10)))
+
         timeline = [
             ("Now", 0, 1.00),
-            ("3 AM", 3, 1.25),
-            ("6 AM", 6, 1.48),
-            ("9 AM", 9, 1.15),
-            ("12 PM", 12, 0.75),
-            ("3 PM", 15, 0.68),
-            ("6 PM", 18, 1.05),
-            ("9 PM", 21, 1.35)
+            ("3 AM", 3, 1.18),
+            ("6 AM", 6, 1.36),
+            ("9 AM", 9, 1.08),
+            ("12 PM", 12, 0.72),
+            ("3 PM", 15, 0.62),
+            ("6 PM", 18, 1.04),
+            ("9 PM", 21, 1.28)
         ]
 
         forecast = []
@@ -83,16 +86,19 @@ def predict_aqi(lat: float = 28.6469, lon: float = 77.3160, current_pm: float = 
             hr_wind = max(2.0, base_wind + (2.5 if 11 <= hr <= 16 else -2.0))
 
             shifted_pm25 = current_pm * diurnal_mult
-            shifted_pm10 = current_pm10 * (diurnal_mult * 0.95)
+            shifted_pm10 = current_pm10 * diurnal_mult
 
-            if model is not None:
-                try:
-                    feat = np.array([[shifted_pm25, shifted_pm10, hr_temp, hr_hum, hr_wind, hr]])
-                    pred_aqi = round(float(model.predict(feat)[0]))
-                except Exception:
-                    pred_aqi = round(max(get_cpcb_subindex_pm25(shifted_pm25), get_cpcb_subindex_pm10(shifted_pm10)))
+            if label == "Now":
+                pred_aqi = base_cpcb_aqi
             else:
-                pred_aqi = round(max(get_cpcb_subindex_pm25(shifted_pm25), get_cpcb_subindex_pm10(shifted_pm10)))
+                if model is not None:
+                    try:
+                        feat = np.array([[shifted_pm25, shifted_pm10, hr_temp, hr_hum, hr_wind, hr]])
+                        pred_aqi = round(float(model.predict(feat)[0]))
+                    except Exception:
+                        pred_aqi = round(base_cpcb_aqi * diurnal_mult)
+                else:
+                    pred_aqi = round(base_cpcb_aqi * diurnal_mult)
 
             forecast.append({
                 "time": label,
