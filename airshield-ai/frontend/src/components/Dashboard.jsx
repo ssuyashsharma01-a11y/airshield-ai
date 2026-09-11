@@ -14,6 +14,24 @@ const STATIONS = [
   { id: 'chandigarh', name: 'Chandigarh (Sec 22)', lat: 30.7333, lon: 76.7794, basePm25: 32, basePm10: 95 }
 ];
 
+function getCpcbSubIndexPm25(pm) {
+  if (pm <= 30) return Math.round((50 / 30) * pm);
+  if (pm <= 60) return Math.round(50 + ((100 - 50) / (60 - 30)) * (pm - 30));
+  if (pm <= 90) return Math.round(100 + ((200 - 100) / (90 - 60)) * (pm - 60));
+  if (pm <= 120) return Math.round(200 + ((300 - 200) / (120 - 90)) * (pm - 90));
+  if (pm <= 250) return Math.round(300 + ((400 - 300) / (250 - 120)) * (pm - 120));
+  return Math.round(400 + ((500 - 400) / (380 - 250)) * (pm - 250));
+}
+
+function getCpcbSubIndexPm10(pm) {
+  if (pm <= 50) return Math.round((50 / 50) * pm);
+  if (pm <= 100) return Math.round(50 + ((100 - 50) / (100 - 50)) * (pm - 50));
+  if (pm <= 250) return Math.round(100 + ((200 - 100) / (250 - 100)) * (pm - 100));
+  if (pm <= 350) return Math.round(200 + ((300 - 200) / (350 - 250)) * (pm - 250));
+  if (pm <= 430) return Math.round(300 + ((400 - 300) / (430 - 350)) * (pm - 350));
+  return Math.round(400 + ((500 - 400) / (500 - 430)) * (pm - 430));
+}
+
 function getAqiCategory(aqi) {
   if (aqi <= 50) return { label: "Good", color: "text-emerald-400" };
   if (aqi <= 100) return { label: "Satisfactory", color: "text-emerald-400" };
@@ -29,13 +47,13 @@ export default function Dashboard({ user, onLogout }) {
   const [loading, setLoading] = useState(false);
   const [currentPm25, setCurrentPm25] = useState(35);
   const [currentPm10, setCurrentPm10] = useState(125);
-  const [liveModelAqi, setLiveModelAqi] = useState(113);
+  const [liveModelAqi, setLiveModelAqi] = useState(115);
   const [forecastData, setForecastData] = useState([]);
   const [windows, setWindows] = useState({
     safeWindow: "3 PM (Safe Valley)",
-    safeAqi: 52,
+    safeAqi: 75,
     dangerWindow: "6 AM (Peak Inversion)",
-    dangerAqi: 138
+    dangerAqi: 165
   });
 
   const fetchLiveTelemetry = async () => {
@@ -61,7 +79,7 @@ export default function Dashboard({ user, onLogout }) {
         }
       }
 
-      // Anand Vihar physical hotspot calibration (road dust factor)
+      // Anand Vihar ground traffic road dust elevation
       if (selectedStation.id === 'delhi' && pm10 < 115) {
         pm10 = Math.round(Math.max(pm10 * 1.5, 122));
       }
@@ -69,25 +87,33 @@ export default function Dashboard({ user, onLogout }) {
       setCurrentPm25(pm25);
       setCurrentPm10(pm10);
 
-      // Hit trained ML Random Forest Backend
+      // CPCB Composite Ground Truth
+      const cpcbComposite = Math.max(
+        getCpcbSubIndexPm25(pm25),
+        getCpcbSubIndexPm10(pm10)
+      );
+
+      // Hit Backend with both PM2.5 and PM10
       const mlRes = await fetch(
-        `${BACKEND_URL}/api/predict?lat=${selectedStation.lat}&lon=${selectedStation.lon}&current_pm=${pm25}`
+        `${BACKEND_URL}/api/predict?lat=${selectedStation.lat}&lon=${selectedStation.lon}&current_pm=${pm25}&current_pm10=${pm10}`
       );
       const mlData = await mlRes.json();
 
       if (mlData && Array.isArray(mlData.forecast) && mlData.forecast.length > 0) {
         setForecastData(mlData.forecast);
-
-        // Model ka "Now" prediction direct current index par bind karo
         const nowSlot = mlData.forecast.find(f => f.time === "Now") || mlData.forecast[0];
-        setLiveModelAqi(nowSlot.aqi);
+        setLiveModelAqi(Math.max(nowSlot.aqi, cpcbComposite));
 
         if (mlData.windows) {
           setWindows(mlData.windows);
         }
+      } else {
+        setLiveModelAqi(cpcbComposite);
       }
     } catch (err) {
       console.error("Backend error:", err);
+      // Fallback to strict CPCB formula on network error
+      setLiveModelAqi(Math.max(getCpcbSubIndexPm25(currentPm25), getCpcbSubIndexPm10(currentPm10)));
     } finally {
       setLoading(false);
     }
