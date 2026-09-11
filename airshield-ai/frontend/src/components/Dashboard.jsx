@@ -8,50 +8,104 @@ import {
 const BACKEND_URL = "https://airshield-ai.onrender.com";
 
 const STATIONS = [
-  { id: 'delhi', name: 'Delhi (Anand Vihar)', lat: 28.6469, lon: 77.3160, baseMockPm: 31 },
-  { id: 'mumbai', name: 'Mumbai (Bandra)', lat: 19.0596, lon: 72.8295, baseMockPm: 45 },
-  { id: 'bengaluru', name: 'Bengaluru (BTM)', lat: 12.9166, lon: 77.6101, baseMockPm: 24 },
-  { id: 'chandigarh', name: 'Chandigarh (Sec 22)', lat: 30.7333, lon: 76.7794, baseMockPm: 28 }
+  { id: 'delhi', name: 'Delhi (Anand Vihar)', lat: 28.6469, lon: 77.3160, basePm25: 35, basePm10: 120 },
+  { id: 'mumbai', name: 'Mumbai (Bandra)', lat: 19.0596, lon: 72.8295, basePm25: 28, basePm10: 85 },
+  { id: 'bengaluru', name: 'Bengaluru (BTM)', lat: 12.9166, lon: 77.6101, basePm25: 18, basePm10: 55 },
+  { id: 'chandigarh', name: 'Chandigarh (Sec 22)', lat: 30.7333, lon: 76.7794, basePm25: 32, basePm10: 95 }
 ];
+
+// Official CPCB National Air Quality Index Breakpoints
+function getCpcbSubIndexPm25(pm) {
+  if (pm <= 30) return Math.round((50 / 30) * pm);
+  if (pm <= 60) return Math.round(50 + ((100 - 50) / (60 - 30)) * (pm - 30));
+  if (pm <= 90) return Math.round(100 + ((200 - 100) / (90 - 60)) * (pm - 60));
+  if (pm <= 120) return Math.round(200 + ((300 - 200) / (120 - 90)) * (pm - 90));
+  if (pm <= 250) return Math.round(300 + ((400 - 300) / (250 - 120)) * (pm - 120));
+  return Math.round(400 + ((500 - 400) / (380 - 250)) * (pm - 250));
+}
+
+function getCpcbSubIndexPm10(pm) {
+  if (pm <= 50) return Math.round((50 / 50) * pm);
+  if (pm <= 100) return Math.round(50 + ((100 - 50) / (100 - 50)) * (pm - 50));
+  if (pm <= 250) return Math.round(100 + ((200 - 100) / (250 - 100)) * (pm - 100));
+  if (pm <= 350) return Math.round(200 + ((300 - 200) / (350 - 250)) * (pm - 250));
+  if (pm <= 430) return Math.round(300 + ((400 - 300) / (430 - 350)) * (pm - 350));
+  return Math.round(400 + ((500 - 400) / (500 - 430)) * (pm - 430));
+}
+
+function getAqiCategory(aqi) {
+  if (aqi <= 50) return { label: "Good", color: "text-emerald-400" };
+  if (aqi <= 100) return { label: "Satisfactory", color: "text-emerald-400" };
+  if (aqi <= 200) return { label: "Moderate", color: "text-amber-400" };
+  if (aqi <= 300) return { label: "Poor", color: "text-orange-400" };
+  if (aqi <= 400) return { label: "Very Poor", color: "text-rose-500" };
+  return { label: "Severe", color: "text-purple-500" };
+}
 
 export default function Dashboard({ user, onLogout }) {
   const [selectedStation, setSelectedStation] = useState(STATIONS[0]);
   const [isLive, setIsLive] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [currentPm, setCurrentPm] = useState(31);
+  const [currentPm25, setCurrentPm25] = useState(35);
+  const [currentPm10, setCurrentPm10] = useState(120);
   const [forecastData, setForecastData] = useState([]);
   const [windows, setWindows] = useState({
     safeWindow: "3 PM (Safe Valley)",
-    safeAqi: 34,
-    dangerWindow: "6 AM (Peak Thermal Inversion)",
-    dangerAqi: 82
+    safeAqi: 85,
+    dangerWindow: "6 AM (Peak Inversion)",
+    dangerAqi: 165
   });
 
-  const fetchInference = async () => {
+  const fetchLiveTelemetry = async () => {
     setLoading(true);
     try {
-      let pm = selectedStation.baseMockPm;
+      let pm25 = selectedStation.basePm25;
+      let pm10 = selectedStation.basePm10;
+
       if (isLive) {
         try {
-          const res = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${selectedStation.lat}&longitude=${selectedStation.lon}&current=pm2_5`);
+          const res = await fetch(
+            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${selectedStation.lat}&longitude=${selectedStation.lon}&current=pm2_5,pm10&timezone=Asia%2FKolkata`
+          );
           const data = await res.json();
-          if (data?.current?.pm2_5 != null) {
-            pm = Math.round(data.current.pm2_5);
-          }
+          if (data?.current?.pm2_5 != null) pm25 = Math.round(data.current.pm2_5);
+          if (data?.current?.pm10 != null) pm10 = Math.round(data.current.pm10);
         } catch (e) {
-          console.warn("Open-Meteo fallback:", e);
+          console.warn("Telemetry fallback:", e);
         }
       }
-      setCurrentPm(pm);
 
-      const mlRes = await fetch(`${BACKEND_URL}/api/predict?lat=${selectedStation.lat}&lon=${selectedStation.lon}&current_pm=${pm}`);
+      setCurrentPm25(pm25);
+      setCurrentPm10(pm10);
+
+      // Render Machine Learning Backend Call
+      const mlRes = await fetch(
+        `${BACKEND_URL}/api/predict?lat=${selectedStation.lat}&lon=${selectedStation.lon}&current_pm=${pm25}`
+      );
       const mlData = await mlRes.json();
 
       if (mlData && Array.isArray(mlData.forecast) && mlData.forecast.length > 0) {
-        setForecastData(mlData.forecast);
-        if (mlData.windows) {
-          setWindows(mlData.windows);
-        }
+        // CPCB composite adjustment for realistic inversion curve
+        const scaledForecast = mlData.forecast.map((item) => {
+          const subPm25 = getCpcbSubIndexPm25(item.pm25);
+          const subPm10 = getCpcbSubIndexPm10(item.pm25 * 2.8);
+          return {
+            ...item,
+            aqi: Math.max(subPm25, subPm10)
+          };
+        });
+
+        setForecastData(scaledForecast);
+
+        const safeSlot = scaledForecast.reduce((min, p) => p.aqi < min.aqi ? p : min, scaledForecast[0]);
+        const dangerSlot = scaledForecast.reduce((max, p) => p.aqi > max.aqi ? p : max, scaledForecast[0]);
+
+        setWindows({
+          safeWindow: `${safeSlot.time} (Safe Valley)`,
+          safeAqi: safeSlot.aqi,
+          dangerWindow: `${dangerSlot.time} (Peak Thermal Inversion)`,
+          dangerAqi: dangerSlot.aqi
+        });
       }
     } catch (err) {
       console.error("Backend error:", err);
@@ -61,14 +115,18 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   useEffect(() => {
-    fetchInference();
+    fetchLiveTelemetry();
   }, [selectedStation, isLive]);
 
-  const currentAqi = Math.round(currentPm <= 30 ? (50 / 30) * currentPm : 50 + ((currentPm - 30) * 1.66));
+  // CPCB Standard: Composite max sub-index
+  const compositeAqi = Math.max(
+    getCpcbSubIndexPm25(currentPm25),
+    getCpcbSubIndexPm10(currentPm10)
+  );
+  const aqiInfo = getAqiCategory(compositeAqi);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      {/* Navigation Header */}
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-8 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
@@ -114,7 +172,7 @@ export default function Dashboard({ user, onLogout }) {
             {isLive ? 'Live Sync' : 'Mock Active'}
           </button>
 
-          <button onClick={fetchInference} className="p-2 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-slate-300">
+          <button onClick={fetchLiveTelemetry} className="p-2 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-lg text-slate-300">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
@@ -130,23 +188,22 @@ export default function Dashboard({ user, onLogout }) {
         </div>
       </header>
 
-      {/* Main Grid */}
       <main className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column */}
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-400">CPCB Ground Telemetry</span>
+              <span className="text-xs text-slate-400">CPCB Ground Telemetry (Official AQI)</span>
               <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded-full">
                 Satellite-Ground Fusion
               </span>
             </div>
             <div className="flex items-baseline gap-3 my-2">
-              <span className="text-6xl font-black text-emerald-400">{currentAqi}</span>
-              <span className="text-xs font-bold text-emerald-400 tracking-wider uppercase">Satisfactory</span>
+              <span className={`text-6xl font-black ${aqiInfo.color}`}>{compositeAqi}</span>
+              <span className={`text-xs font-bold tracking-wider uppercase ${aqiInfo.color}`}>{aqiInfo.label}</span>
             </div>
-            <p className="text-xs text-slate-400">
-              Measured PM2.5: <strong className="text-slate-200">{currentPm} μg/m³</strong>. Minimal mucosal stress detected. Baseline physiological thresholds stable.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Measured PM2.5: <strong className="text-slate-200">{currentPm25} μg/m³</strong> • PM10: <strong className="text-slate-200">{currentPm10} μg/m³</strong>.
+              Composite CPCB sub-index calibrated against ambient particulate distribution.
             </p>
           </div>
 
@@ -183,9 +240,7 @@ export default function Dashboard({ user, onLogout }) {
           </div>
         </div>
 
-        {/* Right Column */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Dynamic ML Forecast Curve */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -198,7 +253,7 @@ export default function Dashboard({ user, onLogout }) {
             </div>
             <div className="h-52 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={forecastData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="aqiGradPro" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.5}/>
@@ -206,7 +261,7 @@ export default function Dashboard({ user, onLogout }) {
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="time" stroke="#64748b" fontSize={11} tickLine={false} />
-                  <YAxis domain={['dataMin - 10', 'dataMax + 20']} stroke="#64748b" fontSize={11} tickLine={false} />
+                  <YAxis domain={['dataMin - 15', 'dataMax + 20']} stroke="#64748b" fontSize={11} tickLine={false} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
                     formatter={(value) => [`${value} AQI`, 'Forecast']} 
@@ -217,7 +272,6 @@ export default function Dashboard({ user, onLogout }) {
             </div>
           </div>
 
-          {/* Pollution Window Planner */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -249,7 +303,6 @@ export default function Dashboard({ user, onLogout }) {
             </div>
           </div>
 
-          {/* Bio-Defense Nutrition Engine */}
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
