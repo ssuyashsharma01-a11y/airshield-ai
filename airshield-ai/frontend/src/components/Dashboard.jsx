@@ -4,7 +4,7 @@ import {
   ShieldCheck, Activity, Clock, Sun, Flame, 
   Sparkles, HeartPulse, RefreshCw, Apple, LogOut,
   Wind, Droplets, Thermometer, CheckCircle2, AlertTriangle,
-  GitBranch, Database, MapPin
+  GitBranch, Database, MapPin, Navigation
 } from 'lucide-react';
 
 const BACKEND_URL = "https://airshield-ai.onrender.com";
@@ -91,6 +91,8 @@ function getAqiCategory(aqi) {
 export default function Dashboard({ user, onLogout }) {
   const [selectedCity, setSelectedCity] = useState(REGIONS[0]);
   const [selectedArea, setSelectedArea] = useState(REGIONS[0].areas[0]);
+  const [isUsingGps, setIsUsingGps] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [userMode, setUserMode] = useState(USER_MODES[0].id);
   const [isLive, setIsLive] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -106,6 +108,7 @@ export default function Dashboard({ user, onLogout }) {
   });
 
   const handleCityChange = (cityId) => {
+    setIsUsingGps(false);
     const city = REGIONS.find(r => r.id === cityId);
     if (city) {
       setSelectedCity(city);
@@ -114,10 +117,58 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   const handleAreaChange = (areaId) => {
+    setIsUsingGps(false);
     const area = selectedCity.areas.find(a => a.id === areaId);
     if (area) {
       setSelectedArea(area);
     }
+  };
+
+  const handleUseLiveLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        let placeName = `GPS (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`;
+
+        try {
+          const revRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const revData = await revRes.json();
+          if (revData && revData.address) {
+            placeName = revData.address.suburb || revData.address.city || revData.address.town || revData.address.state_district || placeName;
+          }
+        } catch (e) {
+          console.warn("Reverse geocode fallback", e);
+        }
+
+        const customLocation = {
+          id: 'gps_live',
+          name: placeName,
+          lat: latitude,
+          lon: longitude,
+          basePm25: 30,
+          basePm10: 90
+        };
+
+        setIsUsingGps(true);
+        setSelectedCity({ id: 'current_device', name: 'My Device Location', areas: [customLocation] });
+        setSelectedArea(customLocation);
+        setGpsLoading(false);
+      },
+      (err) => {
+        console.error("GPS access error:", err);
+        alert("Unable to retrieve your location. Please check location permissions.");
+        setGpsLoading(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
   };
 
   const fetchLiveTelemetry = async () => {
@@ -207,18 +258,34 @@ export default function Dashboard({ user, onLogout }) {
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
               <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{selectedCity.name} › {selectedArea.name}</span>
+              <span>{isUsingGps ? "Live Device GPS" : selectedCity.name} › <strong className="text-slate-200">{selectedArea.name}</strong></span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center flex-wrap gap-2.5">
+          {/* Live GPS Button */}
+          <button
+            onClick={handleUseLiveLocation}
+            title="Use current GPS location"
+            className={`text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border ${
+              isUsingGps 
+                ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-lg shadow-cyan-500/20' 
+                : 'bg-slate-900 border-slate-800 text-cyan-400 hover:border-cyan-500/50'
+            }`}
+          >
+            <Navigation className={`w-3.5 h-3.5 ${gpsLoading ? 'animate-spin' : ''}`} />
+            {gpsLoading ? 'Locating...' : (isUsingGps ? 'Live GPS Active' : 'Use My Location')}
+          </button>
+
+          {/* Dual Dropdown: City / Area */}
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl">
             <select 
               value={selectedCity.id} 
               onChange={(e) => handleCityChange(e.target.value)}
               className="bg-transparent text-xs text-white font-bold px-2 py-1 outline-none cursor-pointer"
             >
+              {isUsingGps && <option value="current_device">My GPS Location</option>}
               {REGIONS.map(r => <option key={r.id} value={r.id} className="bg-slate-900 text-slate-200">{r.name}</option>)}
             </select>
             <span className="text-slate-600 text-xs">/</span>
@@ -311,7 +378,7 @@ export default function Dashboard({ user, onLogout }) {
               <span className={`text-xs font-bold tracking-wider uppercase ${aqiInfo.color}`}>{aqiInfo.label}</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Measured at <strong className="text-white">{selectedArea.name}</strong>: PM2.5 <strong className="text-slate-200">{currentPm25} μg/m³</strong> • PM10 <strong className="text-slate-200">{currentPm10} μg/m³</strong>.
+              Location: <strong className="text-white">{selectedArea.name}</strong> • PM2.5 <strong className="text-slate-200">{currentPm25} μg/m³</strong> • PM10 <strong className="text-slate-200">{currentPm10} μg/m³</strong>.
               Mapped strictly to CPCB sub-indices with dominant pollutant selection.
             </p>
           </div>
@@ -411,7 +478,7 @@ export default function Dashboard({ user, onLogout }) {
                 <p className="text-xs text-slate-400">Forecast Horizon: Next 24 Hours • Random Forest Regressor fit on CPCB observations</p>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
-                Diurnal Resolution (00:00 - 21:00)
+                Diurnal Resolution
               </span>
             </div>
             <div className="h-56 w-full">
