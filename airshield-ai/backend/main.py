@@ -4,6 +4,7 @@ import joblib
 import os
 import requests
 import numpy as np
+from datetime import datetime, timedelta
 
 app = FastAPI(title="AirShield ML Inference Engine")
 
@@ -48,12 +49,7 @@ def get_cpcb_subindex_pm10(pm):
 
 @app.get("/")
 def root():
-    return {
-        "status": "healthy",
-        "engine": "Random Forest Regressor (CPCB 45-day Telemetry Archive)",
-        "r2_score": 0.9996,
-        "samples": 4416
-    }
+    return {"status": "healthy", "engine": "Random Forest Active"}
 
 @app.get("/api/predict")
 def predict_aqi(lat: float = 28.6469, lon: float = 77.3160, current_pm: float = 35.0, current_pm10: float = 120.0):
@@ -74,29 +70,36 @@ def predict_aqi(lat: float = 28.6469, lon: float = 77.3160, current_pm: float = 
 
         base_cpcb_aqi = round(max(get_cpcb_subindex_pm25(current_pm), get_cpcb_subindex_pm10(current_pm10)))
 
-        timeline = [
-            ("Now", 0, 1.00),
-            ("3 AM", 3, 1.18),
-            ("6 AM", 6, 1.36),
-            ("9 AM", 9, 1.08),
-            ("12 PM", 12, 0.72),
-            ("3 PM", 15, 0.62),
-            ("6 PM", 18, 1.04),
-            ("9 PM", 21, 1.28)
-        ]
-
+        # Dynamic Real-Time Progression starting from Indian Standard Time right now
+        now_dt = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        
         forecast = []
         is_rf_active = False
 
-        for label, hr, diurnal_mult in timeline:
-            hr_temp = base_temp + (5.0 if 11 <= hr <= 16 else -4.0)
+        # Generate forward steps: Now, +3h, +6h, +9h, +12h, +15h, +18h, +21h
+        for step in range(8):
+            target_dt = now_dt + timedelta(hours=step * 3)
+            hr = target_dt.hour
+            label = "Now" if step == 0 else target_dt.strftime("%I %p").lstrip("0")
+
+            # Physical boundary diurnal factor based on clock hour
+            if 4 <= hr <= 8:
+                diurnal_mult = 1.38
+            elif 12 <= hr <= 16:
+                diurnal_mult = 0.65
+            elif 19 <= hr <= 23:
+                diurnal_mult = 1.25
+            else:
+                diurnal_mult = 1.05
+
+            hr_temp = base_temp + (4.0 if 11 <= hr <= 16 else -3.5)
             hr_hum = max(20.0, base_humidity + (-15.0 if 11 <= hr <= 16 else 15.0))
             hr_wind = max(2.0, base_wind + (2.5 if 11 <= hr <= 16 else -2.0))
 
             shifted_pm25 = current_pm * diurnal_mult
             shifted_pm10 = current_pm10 * diurnal_mult
 
-            if label == "Now":
+            if step == 0:
                 pred_aqi = base_cpcb_aqi
             else:
                 if model is not None:
@@ -111,36 +114,25 @@ def predict_aqi(lat: float = 28.6469, lon: float = 77.3160, current_pm: float = 
 
             forecast.append({
                 "time": label,
+                "hour_of_day": hr,
                 "aqi": pred_aqi,
                 "pm25": round(shifted_pm25, 1),
                 "pm10": round(shifted_pm10, 1)
             })
 
-        safe_slot = min(forecast, key=lambda x: x["aqi"])
-        danger_slot = max(forecast, key=lambda x: x["aqi"])
-
-        # Explainable Atmospheric Drivers
-        drivers = [
-            {"factor": "Thermal Boundary Inversion", "status": "Active (High impact at dawn)", "level": "High" if base_humidity > 60 else "Moderate"},
-            {"factor": "Surface Wind Dispersion", "status": f"{base_wind} km/h (Stagnant)" if base_wind < 8 else f"{base_wind} km/h (Active flushing)", "level": "High" if base_wind < 6 else "Low"},
-            {"factor": "Particulate Coalescence", "status": f"{base_humidity}% Relative Humidity", "level": "High" if base_humidity > 70 else "Normal"}
-        ]
+        # Don't pick "Now" as safe/danger unless it is genuinely the only option
+        future_slots = forecast[1:]
+        safe_slot = min(future_slots, key=lambda x: x["aqi"])
+        danger_slot = max(future_slots, key=lambda x: x["aqi"])
 
         return {
             "status": "success",
             "station": {"latitude": lat, "longitude": lon},
             "engine_status": "Random Forest Active" if (model_loaded or is_rf_active) else "Physical Diurnal Model",
-            "confidence": 92 if is_rf_active or model_loaded else 82,
-            "training_specs": {
-                "dataset": "CPCB Ground Telemetry Archive",
-                "samples": 4416,
-                "r2_score": 0.9996
-            },
-            "atmospheric_drivers": drivers,
             "windows": {
-                "safeWindow": f"{safe_slot['time']} (Safe Valley)",
+                "safeWindow": f"{safe_slot['time']} (Optimal Lower-Exposure)",
                 "safeAqi": safe_slot["aqi"],
-                "dangerWindow": f"{danger_slot['time']} (Peak Thermal Inversion)",
+                "dangerWindow": f"{danger_slot['time']} (Peak Accumulation Risk)",
                 "dangerAqi": danger_slot["aqi"]
             },
             "forecast": forecast
