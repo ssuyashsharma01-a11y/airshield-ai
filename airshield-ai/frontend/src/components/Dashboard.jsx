@@ -89,9 +89,10 @@ function getAqiCategory(aqi) {
   return { label: "Severe", color: "text-purple-500" };
 }
 
-export default function Dashboard({
+export default function Dashboard({ user, onLogout }) {
   const { t, i18n } = useTranslation();
-  const toggleLang = () => i18n.changeLanguage(i18n.language && i18n.language.startsWith('hi') ? 'en' : 'hi'); user, onLogout }) {
+  const toggleLang = () => i18n.changeLanguage(i18n.language && i18n.language.startsWith('hi') ? 'en' : 'hi');
+
   const [selectedCity, setSelectedCity] = useState(REGIONS[0]);
   const [selectedArea, setSelectedArea] = useState(REGIONS[0].areas[0]);
   const [isUsingGps, setIsUsingGps] = useState(false);
@@ -611,4 +612,5 @@ export default function Dashboard({
     </div>
   );
 }
+
 
