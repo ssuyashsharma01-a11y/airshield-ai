@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import { useTranslation } from 'react-i18next';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   ShieldCheck, Activity, Clock, Sun, Flame, 
@@ -88,7 +89,9 @@ function getAqiCategory(aqi) {
   return { label: "Severe", color: "text-purple-500" };
 }
 
-export default function Dashboard({ user, onLogout }) {
+export default function Dashboard({
+  const { t, i18n } = useTranslation();
+  const toggleLang = () => i18n.changeLanguage(i18n.language && i18n.language.startsWith('hi') ? 'en' : 'hi'); user, onLogout }) {
   const [selectedCity, setSelectedCity] = useState(REGIONS[0]);
   const [selectedArea, setSelectedArea] = useState(REGIONS[0].areas[0]);
   const [isUsingGps, setIsUsingGps] = useState(false);
@@ -253,7 +256,7 @@ export default function Dashboard({ user, onLogout }) {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-black tracking-tight text-white">AirShield AI</h1>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800">
-                PM2.5 Forecast & Exposure Intelligence
+                {t('app_subtitle')}
               </span>
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
@@ -327,10 +330,10 @@ export default function Dashboard({ user, onLogout }) {
       <div className="max-w-7xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={`p-5 rounded-2xl border flex items-center justify-between ${isRecommendedWindow ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300' : 'bg-amber-950/30 border-amber-800/50 text-amber-300'}`}>
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider block text-slate-400">Current Outdoor Assessment</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider block text-slate-400">{t('assessment_title')}</span>
             <div className="text-2xl font-black mt-1 flex items-center gap-2">
               {isRecommendedWindow ? <CheckCircle2 className="w-6 h-6 text-emerald-400" /> : <AlertTriangle className="w-6 h-6 text-amber-400" />}
-              {isRecommendedWindow ? "Recommended Outdoor Window" : "Elevated Exposure Period"}
+              {isRecommendedWindow ? t('assessment_rec') : t('assessment_elev')}
             </div>
             <p className="text-xs text-slate-300 mt-1">Lower-exposure slot: <strong>{windows.safeWindow}</strong></p>
           </div>
@@ -338,7 +341,7 @@ export default function Dashboard({ user, onLogout }) {
 
         <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/60 flex items-center justify-between">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider block text-slate-400">Prediction Confidence</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider block text-slate-400">{t('conf_title')}</span>
             <div className="text-2xl font-black text-cyan-400 mt-1">91.4%</div>
             <p className="text-xs text-slate-400 mt-1">Evaluated on 20% unseen validation split (4,416 rows)</p>
           </div>
@@ -347,7 +350,7 @@ export default function Dashboard({ user, onLogout }) {
 
         <div className="p-5 rounded-2xl border border-slate-800 bg-slate-900/60 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sensitivity Profile</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{t('sens_title')}</span>
             <span className="text-[10px] text-cyan-400 font-semibold uppercase">Self-Configured</span>
           </div>
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
@@ -515,7 +518,7 @@ export default function Dashboard({ user, onLogout }) {
                   <Sun className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">Optimal Outdoor Window</span>
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">{t('opt_window_title')}</span>
                   <strong className="text-base text-white mt-0.5 block">{windows.safeWindow}</strong>
                   <p className="text-xs text-slate-300 mt-1">Solar boundary breakdown encourages particulate flushing. Estimated AQI: ~{windows.safeAqi}.</p>
                 </div>
@@ -525,7 +528,7 @@ export default function Dashboard({ user, onLogout }) {
                   <Flame className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">Peak Particulate Accumulation Risk</span>
+                  <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider block">{t('peak_risk_title')}</span>
                   <strong className="text-base text-white mt-0.5 block">{windows.dangerWindow}</strong>
                   <p className="text-xs text-slate-300 mt-1">Surface stagnation traps exhaust near ground level. Keep purifiers running. Estimated AQI: ~{windows.dangerAqi}.</p>
                 </div>
@@ -608,3 +611,4 @@ export default function Dashboard({ user, onLogout }) {
     </div>
   );
 }
+
