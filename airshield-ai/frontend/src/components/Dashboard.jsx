@@ -200,7 +200,11 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   const { t, i18n } = useTranslation();
-  const toggleLang = () => i18n.changeLanguage(i18n.language && i18n.language.startsWith('hi') ? 'en' : 'hi');
+  const toggleLang = () => {
+    const cur = i18n.language || 'en';
+    const next = cur.startsWith('en') ? 'hi' : cur.startsWith('hi') ? 'pa' : 'en';
+    i18n.changeLanguage(next);
+  };
 
   
   const [commuteMinutes, setCommuteMinutes] = useState(30);
@@ -465,7 +469,7 @@ export default function Dashboard({ user, onLogout }) {
             className="text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border bg-sky-950/60 border-sky-600/50 text-sky-300 hover:bg-sky-900/60 cursor-pointer"
           >
             <span>🌐</span>
-            <span>{(i18n.language || '').startsWith('hi') ? 'ਪੰਜਾਬੀ' : (i18n.language || '').startsWith('pa') ? 'English' : 'हिन्दी'}</span>
+            <span>{(i18n.language || '').startsWith('en') ? 'हिन्दी' : (i18n.language || '').startsWith('hi') ? 'ਪੰਜਾਬੀ' : 'English'}</span>
           </button>
 
           {/* Voice Advisory */}
