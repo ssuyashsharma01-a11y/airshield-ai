@@ -171,7 +171,7 @@ export default function Dashboard({ user, onLogout }) {
     const safeWindow = windows?.safeWindow || 'Daytime';
     const dangerWindow = windows?.dangerWindow || 'Evening';
     let alertMsg = `*AirShield AI Daily Advisory (+91 ${cleanNum})*%0A%0A`
-      + `📍 Location: ${selectedArea?.name || 'Local Station'}%0A`
+      + `📍 Location: ${(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)")?.name || 'Local Station'}%0A`
       + `📊 Current AQI: ${liveModelAqi || 100}%0A`
       + `🟢 Optimal Window: ${safeWindow}%0A`
       + `🔴 Peak Risk: ${dangerWindow}%0A%0A`
@@ -215,7 +215,7 @@ export default function Dashboard({ user, onLogout }) {
 
     window.speechSynthesis.speak(utterance);
   };
-  const currentSafePm = (selectedArea && selectedArea.pm25) ? selectedArea.pm25 : 65;
+  const currentSafePm = ((typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)") && (typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").pm25) ? (typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").pm25 : 65;
   const routeMultiplier = routeType === 'green' ? 0.62 : 1.28;
   const effectiveConcentration = currentSafePm * routeMultiplier;
   const inhaledMassUg = Math.round((effectiveConcentration * (ventilationRates[commuteActivity] || 1.2) * (commuteMinutes / 60)) * 10) / 10;
@@ -243,6 +243,7 @@ export default function Dashboard({ user, onLogout }) {
   
 
     const activeT = LANG_DICTIONARY[activeLang] || LANG_DICTIONARY['en'];
+    const safeAreaName = (typeof selectedStation !== 'undefined' ? selectedStation : 'Anand Vihar (ISBT)');
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
@@ -259,7 +260,7 @@ export default function Dashboard({ user, onLogout }) {
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
               <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{isUsingGps ? "Live Device GPS" : selectedCity.name} › <strong className="text-slate-200">{selectedArea.name}</strong></span>
+              <span>{isUsingGps ? "Live Device GPS" : selectedCity.name} › <strong className="text-slate-200">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</strong></span>
             </p>
           </div>
         </div>
@@ -291,7 +292,7 @@ export default function Dashboard({ user, onLogout }) {
             </select>
             <span className="text-slate-600 text-xs">/</span>
             <select 
-              value={selectedArea.id} 
+              value={(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").id} 
               onChange={(e) => handleAreaChange(e.target.value)}
               className="bg-transparent text-xs text-cyan-400 font-semibold px-2 py-1 outline-none cursor-pointer"
             >
@@ -422,7 +423,7 @@ export default function Dashboard({ user, onLogout }) {
               <span className={`text-xs font-bold tracking-wider uppercase ${aqiInfo.color}`}>{aqiInfo.label}</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Location: <strong className="text-white">{selectedArea.name}</strong> • PM2.5 <strong className="text-slate-200">{currentPm25} μg/m³</strong> • PM10 <strong className="text-slate-200">{currentPm10} μg/m³</strong>.
+              Location: <strong className="text-white">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</strong> • PM2.5 <strong className="text-slate-200">{currentPm25} μg/m³</strong> • PM10 <strong className="text-slate-200">{currentPm10} μg/m³</strong>.
               Mapped strictly to CPCB sub-indices with dominant pollutant selection.
             </p>
           </div>
@@ -518,7 +519,7 @@ export default function Dashboard({ user, onLogout }) {
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-bold text-white">{activeT.forecastHeading} ({selectedArea.name})</h2>
+                <h2 className="text-sm font-bold text-white">{activeT.forecastHeading} ({(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name})</h2>
                 <p className="text-xs text-slate-400">Forecast Horizon: Next 24 Hours • Random Forest Regressor fit on CPCB observations</p>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
@@ -1039,7 +1040,7 @@ export default function Dashboard({ user, onLogout }) {
                 <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
                   <div className="text-slate-300 font-semibold flex items-center justify-between">
                     <span>Target Station:</span>
-                    <span className="text-cyan-400">{selectedArea.name}</span>
+                    <span className="text-cyan-400">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</span>
                   </div>
                   <div>Morning Schedule: <strong className="text-slate-200">07:00 AM IST</strong></div>
                   <div>Payload: Composite AQI, Optimal Window, and HEPA Precautions.</div>
