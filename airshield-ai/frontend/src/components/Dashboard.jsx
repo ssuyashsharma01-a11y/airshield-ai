@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 ﻿import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -152,6 +153,7 @@ const ventilationRates = {
 };
 
 export default function Dashboard({ user, onLogout }) {
+  const { t, i18n } = useTranslation();
 
   
   // WhatsApp State Hooks & Handler
