@@ -142,6 +142,15 @@ const LANG_DICTIONARY = {
   }
 };
 
+
+// Physiological ventilation rates (L/min)
+const ventilationRates = {
+  resting: 6.5,
+  walking: 14.0,
+  cycling: 32.0,
+  running: 45.0
+};
+
 export default function Dashboard({ user, onLogout }) {
 
   
@@ -252,6 +261,7 @@ export default function Dashboard({ user, onLogout }) {
   const currentCommuteMinutes = typeof commuteMinutes !== 'undefined' ? commuteMinutes : 30;
   const currentCommuteActivity = typeof commuteActivity !== 'undefined' ? commuteActivity : 'cycling';
 
+    const safeVentRates = typeof ventilationRates !== 'undefined' ? ventilationRates : { resting: 6.5, walking: 14.0, cycling: 32.0, running: 45.0 };
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
