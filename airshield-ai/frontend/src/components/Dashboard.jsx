@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   ShieldCheck, Activity, Clock, Sun, Flame, 
-  Sparkles, HeartPulse, RefreshCw, FileText, Send, MessageSquare, Volume2, Bike, Footprints, Apple, LogOut,
+  Sparkles, HeartPulse, RefreshCw, X, FileText, Send, MessageSquare, Volume2, Bike, Footprints, Apple, LogOut,
   Wind, Droplets, Thermometer, CheckCircle2, AlertTriangle,
   GitBranch, Database, MapPin, Navigation
 } from 'lucide-react';
@@ -856,7 +856,7 @@ export default function Dashboard({ user, onLogout }) {
               onClick={() => { setShowWaModal(false); setWaSubscribed(false); }}
               className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <span className="text-base font-bold leading-none select-none">✕</span>
             </button>
 
             <div className="flex items-center gap-3 mb-4">
