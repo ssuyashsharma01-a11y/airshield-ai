@@ -91,6 +91,30 @@ function getAqiCategory(aqi) {
 
 export default function Dashboard({ user, onLogout }) {
 
+  
+  // WhatsApp State Hooks & Handler
+  const [showWaModal, setShowWaModal] = useState(false);
+  const [waPhone, setWaPhone] = useState("");
+  const [waSubscribed, setWaSubscribed] = useState(false);
+
+  const handleSendWaAlert = (e) => {
+    e.preventDefault();
+    if (!waPhone || waPhone.length < 10) return;
+    const cleanNum = waPhone.replace(/\D/g, "");
+    const safeWindow = windows?.safeWindow || 'Daytime';
+    const dangerWindow = windows?.dangerWindow || 'Evening';
+    let alertMsg = `*AirShield AI Daily Advisory (+91 ${cleanNum})*%0A%0A`
+      + `📍 Location: ${selectedArea?.name || 'Local Station'}%0A`
+      + `📊 Current AQI: ${liveModelAqi || 100}%0A`
+      + `🟢 Optimal Window: ${safeWindow}%0A`
+      + `🔴 Peak Risk: ${dangerWindow}%0A%0A`
+      + `_Automated Dispatch Scheduled for 07:00 AM Daily._`;
+    setWaSubscribed(true);
+    setTimeout(() => {
+      window.open(`https://wa.me/91${cleanNum}?text=${alertMsg}`, '_blank');
+    }, 600);
+  };
+
   const speakAdvisory = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
