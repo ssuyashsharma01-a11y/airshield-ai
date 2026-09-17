@@ -1,3 +1,4 @@
+import { jsPDF } from 'jspdf';
 ﻿import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -424,121 +425,195 @@ export default function Dashboard({ user, onLogout }) {
   
 
     const activeT = LANG_DICTIONARY[activeLang] || LANG_DICTIONARY['en'];
-                    const handleExportPDF = () => {
-    // Remove any lingering print node
-    const oldNode = document.getElementById('clinical-audit-print-portal');
-    if (oldNode) oldNode.remove();
+                      const handleExportPDF = () => {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
 
-    const printContainer = document.createElement('div');
-    printContainer.id = 'clinical-audit-print-portal';
-    printContainer.innerHTML = `
-      <style>
-        @media screen {
-          #clinical-audit-print-portal { display: none !important; }
-        }
-        @media print {
-          @page { size: A4 portrait; margin: 10mm; }
-          body * { visibility: hidden !important; }
-          #clinical-audit-print-portal, #clinical-audit-print-portal * { visibility: visible !important; }
-          #clinical-audit-print-portal {
-            display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            background: #ffffff !important;
-            color: #0f172a !important;
-            padding: 10px !important;
-            box-sizing: border-box !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-          }
-        }
-      </style>
-      <div style="border-bottom: 2px solid #0284c7; padding-bottom: 10px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-start;">
-        <div>
-          <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0284c7; letter-spacing: -0.5px;">AirShield AI</h1>
-          <div style="font-size: 13px; font-weight: 600; color: #334155; margin-top: 2px;">Exposure Dosimetry & Regulatory Telemetry Audit Report</div>
-          <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Station: Anand Vihar (ISBT), Delhi NCR • Time: ${new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}</div>
-        </div>
-        <span style="background: #0284c7; color: #ffffff; padding: 4px 10px; border-radius: 9999px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">CPCB OFFICIAL SYNCED</span>
-      </div>
+    // Brand Header
+    doc.setFillColor(2, 132, 199);
+    doc.rect(14, 12, 182, 1.5, 'F');
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
-        <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; background: #f8fafc;">
-          <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase;">Real-Time Ambient Status</div>
-          <div style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 2px;">AQI 115 <span style="font-size: 12px; font-weight: 600; color: #475569;">(Moderate)</span></div>
-          <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">PM2.5: 57 µg/m³ • PM10: 125 µg/m³ (CPCB Sub-Index)</div>
-        </div>
-        <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; background: #f8fafc;">
-          <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase;">ML Forecasting Model</div>
-          <div style="font-size: 22px; font-weight: 800; color: #0284c7; margin-top: 2px;">91.4% <span style="font-size: 12px; font-weight: 600; color: #475569;">Confidence</span></div>
-          <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">Random Forest Regressor evaluated on 4,416 historical CPCB records</div>
-        </div>
-      </div>
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(2, 132, 199);
+    doc.text("AirShield AI", 14, 22);
 
-      <h3 style="font-size: 11px; font-weight: 700; color: #1e293b; margin: 12px 0 6px 0; text-transform: uppercase; border-left: 3px solid #0284c7; padding-left: 6px;">Personal Lung Dosimetry (Berkeley Earth Standard)</h3>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10.5px;">
-        <thead>
-          <tr style="background: #f1f5f9; color: #334155;">
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Mode of Transit</th>
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Exposure Window</th>
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Ventilation Volume</th>
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Inhaled Particulate</th>
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Cigarette Equivalence</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">Arterial Road Cycling</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">30 Minutes</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">32.0 L/min</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">48.4 µg PM2.5</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px; font-weight: 700; color: #d97706;">0.22 Cigarettes</td>
-          </tr>
-          <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">Green Corridor Transit</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">30 Minutes</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">14.0 L/min</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">16.8 µg PM2.5</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px; font-weight: 700; color: #16a34a;">0.08 Cigarettes</td>
-          </tr>
-        </tbody>
-      </table>
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(255, 255, 255);
+    doc.setFillColor(2, 132, 199);
+    doc.roundedRect(150, 16, 46, 6, 1, 1, 'F');
+    doc.text("CPCB OFFICIAL SYNCED", 153, 20.2);
 
-      <h3 style="font-size: 11px; font-weight: 700; color: #1e293b; margin: 12px 0 6px 0; text-transform: uppercase; border-left: 3px solid #0284c7; padding-left: 6px;">Indoor HEPA Air Cleansing Physics (ANSI/AHAM AC-1)</h3>
-      <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10.5px;">
-        <thead>
-          <tr style="background: #f1f5f9; color: #334155;">
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Room Volume</th>
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Purifier CADR</th>
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Air Exchange Rate</th>
-            <th style="border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;">Target Safe Air (&lt;25 µg/m³)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">250 sq. ft (2,500 cu. ft)</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">180 CFM</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px;">4.5 ACH</td>
-            <td style="border: 1px solid #cbd5e1; padding: 6px 8px; font-weight: 700; color: #0284c7;">~21 Minutes</td>
-          </tr>
-        </tbody>
-      </table>
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
+    doc.text("Exposure Dosimetry & Regulatory Telemetry Audit Report", 14, 28);
 
-      <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 6px; font-size: 9.5px; color: #94a3b8; text-align: center;">
-        Generated autonomously by AirShield AI Telemetry Engine • Formatted for Single-Page Environmental Compliance Audit
-      </div>
-    `;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Station: Anand Vihar (ISBT), Delhi NCR  |  Generated: ${new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}`, 14, 33);
 
-    document.body.appendChild(printContainer);
+    // Cards Grid
+    // Card 1: Ambient AQI
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(14, 38, 88, 22, 2, 2, 'FD');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("REAL-TIME AMBIENT STATUS", 18, 43);
+    doc.setFontSize(14);
+    doc.setTextColor(217, 119, 6);
+    doc.text("AQI 115", 18, 50);
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text("(Moderate Exposure Risk)", 39, 50);
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont("helvetica", "normal");
+    doc.text("PM2.5: 57 ug/m3  |  PM10: 125 ug/m3 (NAAQS Max)", 18, 55);
 
-    window.print();
+    // Card 2: ML Model Confidence
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(108, 38, 88, 22, 2, 2, 'FD');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text("ML FORECASTING CONFIDENCE", 112, 43);
+    doc.setFontSize(14);
+    doc.setTextColor(2, 132, 199);
+    doc.text("91.4%", 112, 50);
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.text("(High Reliability)", 129, 50);
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont("helvetica", "normal");
+    doc.text("Random Forest Regressor fit on 4,416 historical CPCB cycles", 112, 55);
 
-    // Clean up container after print dialog closes
-    setTimeout(() => {
-      const el = document.getElementById('clinical-audit-print-portal');
-      if (el) el.remove();
-    }, 1500);
+    // Section 1: Lung Dosimetry
+    doc.setFillColor(2, 132, 199);
+    doc.rect(14, 66, 2, 5, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("PERSONAL LUNG DOSIMETRY (BERKELEY EARTH MODEL)", 18, 70);
+
+    // Table 1 Header
+    doc.setFillColor(241, 245, 249);
+    doc.rect(14, 73, 182, 6, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    doc.text("Mode of Transit", 16, 77.2);
+    doc.text("Exposure Duration", 58, 77.2);
+    doc.text("Ventilation Vol.", 95, 77.2);
+    doc.text("Inhaled PM2.5", 132, 77.2);
+    doc.text("Cigarette Equiv.", 165, 77.2);
+
+    // Table 1 Rows
+    doc.setFont("helvetica", "normal");
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, 85, 196, 85);
+    doc.text("Arterial Road Cycling", 16, 83);
+    doc.text("30 Minutes", 58, 83);
+    doc.text("32.0 L/min", 95, 83);
+    doc.text("48.4 ug", 132, 83);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(217, 119, 6);
+    doc.text("0.22 Cigarettes", 165, 83);
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(51, 65, 85);
+    doc.line(14, 91, 196, 91);
+    doc.text("Green Corridor Transit", 16, 89);
+    doc.text("30 Minutes", 58, 89);
+    doc.text("14.0 L/min", 95, 89);
+    doc.text("16.8 ug", 132, 89);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(22, 163, 74);
+    doc.text("0.08 Cigarettes", 165, 89);
+
+    // Section 2: HEPA Physics
+    doc.setFillColor(2, 132, 199);
+    doc.rect(14, 98, 2, 5, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("INDOOR HEPA AIR CLEANSING PHYSICS (ANSI/AHAM AC-1)", 18, 102);
+
+    // Table 2 Header
+    doc.setFillColor(241, 245, 249);
+    doc.rect(14, 105, 182, 6, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    doc.text("Target Room Volume", 16, 109.2);
+    doc.text("Purifier CADR Rating", 65, 109.2);
+    doc.text("Air Exchange Rate", 115, 109.2);
+    doc.text("Est. Time to Clean Air (<25 ug)", 150, 109.2);
+
+    doc.setFont("helvetica", "normal");
+    doc.line(14, 117, 196, 117);
+    doc.text("250 sq. ft (2,500 cu. ft)", 16, 115);
+    doc.text("180 CFM", 65, 115);
+    doc.text("4.5 ACH", 115, 115);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(2, 132, 199);
+    doc.text("~21 Minutes", 150, 115);
+
+    // Section 3: Urban Policy Sandbox
+    doc.setFillColor(2, 132, 199);
+    doc.rect(14, 124, 2, 5, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text("URBAN POLICY INTERVENTION SIMULATION", 18, 128);
+
+    // Table 3 Header
+    doc.setFillColor(241, 245, 249);
+    doc.rect(14, 131, 182, 6, 'F');
+    doc.setFontSize(8);
+    doc.setTextColor(51, 65, 85);
+    doc.text("Intervention Parameter", 16, 135.2);
+    doc.text("Predicted Source Mitigation", 85, 135.2);
+    doc.text("Simulated Horizon AQI", 145, 135.2);
+
+    doc.setFont("helvetica", "normal");
+    doc.line(14, 143, 196, 143);
+    doc.text("Commercial Diesel Heavy Vehicle Restriction", 16, 141);
+    doc.text("-22% Boundary Inversion Layer Load", 85, 141);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(2, 132, 199);
+    doc.text("AQI 115 -> 98 (Satisfactory)", 145, 141);
+
+    // Clinical Advisory Box
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(14, 150, 182, 18, 2, 2, 'FD');
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    doc.text("CLINICAL & PREVENTIVE EXPOSURE SUMMARY:", 18, 155);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text("- Reschedule high-ventilation outdoor cardio workouts to optimal solar dispersion window (2:00 PM - 5:00 PM).", 18, 160);
+    doc.text("- Keep certified N95 particulate respirators accessible when traversing heavy diesel arterial transit corridors.", 18, 164);
+
+    // Footer
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineDashPattern([1, 1], 0);
+    doc.line(14, 178, 196, 178);
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text("Generated autonomously by AirShield AI Telemetry Engine  |  National Ambient Air Quality Standards (NAAQS) Compliance", 14, 183);
+
+    // Direct Instant Download
+    doc.save("AirShield-AI-Clinical-Audit-Report.pdf");
   };
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans " print:hidden>
