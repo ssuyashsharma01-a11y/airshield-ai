@@ -1,4 +1,4 @@
-﻿import i18n from 'i18next';
+import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
@@ -44,7 +44,7 @@ const resources = {
       lower_slot: "सुरक्षित समय स्लॉट",
       conf_title: "पूर्वानुमान सटीकता",
       conf_desc: "20% अलग डेटा (4,416 सैंपल्स) पर जांचा गया",
-      sens_title: "संवेदनशीलता स्तर",
+      sens_title: "संवेदनस्थिलता स्तर",
       sens_badge: "स्वयं निर्धारित",
       mode_sensitive: "संवेदनशील वर्ग",
       mode_general: "सामान्य नागरिक",
@@ -53,6 +53,32 @@ const resources = {
       opt_window_desc: "धूप और गर्म हवा से प्रदूषण वातावरण में बिखर जाता है।",
       peak_risk_title: "प्रदूषण का सबसे खतरनाक समय",
       peak_risk_desc: "ठंड के कारण धुआं जमीन के पास जमा होकर रुक जाता है। प्यूरीफायर चलाकर रखें।"
+    }
+  },
+  pa: {
+    translation: {
+      app_subtitle: "ਵਾਯੂ ਗੁਣਵੱਤਾ ਪੂਰਵ-ਅਨੁਮਾਨ ਅਤੇ ਨਿੱਜੀ ਸੁਰੱਖਿਆ",
+      loc_device: "ਲਾਇਵ ਡਿਵਾਇਸ ਜੀਪੀਐੱਸ",
+      loc_button: "ਮੇਰੀ ਲਾਇਵ ਲੋਕੇਸ਼ਨ",
+      loc_locating: "ਸਥਾਨ ਖੋਜ ਰਹੇ ਹਾਂ...",
+      loc_active: "ਜੀਪੀਐੱਸ ਚਾਲੂ",
+      live_sync: "ਲਾਇਵ ਸਿੰਕ",
+      mock_active: "ਮ੉ਕ ਚਾਲੂ",
+      assessment_title: "ਮੌਜੂਦਾ ਬਾਹਰੀ ਵਾਯੂ ਅੰਦਾਜ਼ਾ",
+      assessment_rec: "ਬਾਹਰ ਜਾਣ ਦਾ ਸੁਰੱਖਿਅਤ ਸਮਾਂ",
+      assessment_elev: "ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਪੱਧਰ (ਸਾਵਧਾਨੀ ਰੱਖੋ)",
+      lower_slot: "ਸੁਰੱਖਿਅਤ ਸਮਾਂ ਸਲ੉ਟ",
+      conf_title: "ਪੂਰਵ-ਅਨੁਮਾਨ ਸਟੀਕਤਾ",
+      conf_desc: "20% ਵੱਖਰੇ ਡੇਟਾ (4,416 ਸੈਂਪਲ) ਤੇ ਜਾਂਚਿਆ ਗਿਆ",
+      sens_title: "ਸੰਵੇਦਨਸ਼ੀਲਤਾ ਪੱਧਰ",
+      sens_badge: "ਖ਼ੁਦ ਨਿਰਧਾਰਤ",
+      mode_sensitive: "ਸੰਵੇਦਨਸ਼ੀਲ ਵਰਗ",
+      mode_general: "ਆਮ ਜਨਤਾ",
+      mode_outdoor: "ਬਾਹਰ ਕੰਮ ਕਰਨ ਵਾਲੇ",
+      opt_window_title: "ਬਾਹਰ ਜਾਣ ਦਾ ਸਭ ਤੋਂ ਸੁਰੱਖਿਅਤ ਸਮਾਂ",
+      opt_window_desc: "ਧੁੱਪ ਅਤੇ ਗਰਮ ਹਵਾ ਨਾਲ ਪ੍ਰਦੂਸ਼ਣ ਵਾਤਾਵਰਣ ਵਿੱਚ ਖਿੰਡ ਜਾਂਦਾ ਹੈ੤",
+      peak_risk_title: "ਪ੍ਰਦੂਸ਼ਣ ਦਾ ਸਭ ਤੋਂ ਖ਼ਤਰਨਾਕ ਸਮਾਂ",
+      peak_risk_desc: "ਠੰਡ ਕਾਰਨ ਧੂਂਆਂ ਜ਼ਮੀਨ ਕੋਲ ਜੰਮ ਕੇ ਰੁਕ ਜਾਂਦਾ ਹੈ੤ ਪਿਊਰੀਫਾਇਅਰ ਚਲਾ ਕੇ ਰੱਖੋ੤"
     }
   }
 };
