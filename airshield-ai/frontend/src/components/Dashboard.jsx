@@ -264,6 +264,9 @@ export default function Dashboard({ user, onLogout }) {
   const currentCommuteActivity = typeof commuteActivity !== 'undefined' ? commuteActivity : 'cycling';
 
     const safeVentRates = typeof ventilationRates !== 'undefined' ? ventilationRates : { resting: 6.5, walking: 14.0, cycling: 32.0, running: 45.0 };
+    // GPS State Fallback
+  const safeIsUsingGps = typeof safeIsUsingGps !== 'undefined' ? safeIsUsingGps : false;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
@@ -280,7 +283,7 @@ export default function Dashboard({ user, onLogout }) {
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
               <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{isUsingGps ? "Live Device GPS" : selectedCity.name} › <strong className="text-slate-200">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</strong></span>
+              <span>{safeIsUsingGps ? "Live Device GPS" : selectedCity.name} › <strong className="text-slate-200">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</strong></span>
             </p>
           </div>
         </div>
@@ -291,13 +294,13 @@ export default function Dashboard({ user, onLogout }) {
             onClick={handleUseLiveLocation}
             title="Use current GPS location"
             className={`text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border ${
-              isUsingGps 
+              safeIsUsingGps 
                 ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-lg shadow-cyan-500/20' 
                 : 'bg-slate-900 border-slate-800 text-cyan-400 hover:border-cyan-500/50'
             }`}
           >
             <Navigation className={`w-3.5 h-3.5 ${gpsLoading ? 'animate-spin' : ''}`} />
-            {gpsLoading ? 'Locating...' : (isUsingGps ? 'Live GPS Active' : 'Use My Location')}
+            {gpsLoading ? 'Locating...' : (safeIsUsingGps ? 'Live GPS Active' : 'Use My Location')}
           </button>
 
           {/* Dual Dropdown: City / Area */}
@@ -307,7 +310,7 @@ export default function Dashboard({ user, onLogout }) {
               onChange={(e) => handleCityChange(e.target.value)}
               className="bg-transparent text-xs text-white font-bold px-2 py-1 outline-none cursor-pointer"
             >
-              {isUsingGps && <option value="current_device">My GPS Location</option>}
+              {safeIsUsingGps && <option value="current_device">My GPS Location</option>}
               {REGIONS.map(r => <option key={r.id} value={r.id} className="bg-slate-900 text-slate-200">{r.name}</option>)}
             </select>
             <span className="text-slate-600 text-xs">/</span>
