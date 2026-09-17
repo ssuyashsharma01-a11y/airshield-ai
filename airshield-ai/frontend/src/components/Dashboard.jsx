@@ -99,9 +99,7 @@ export default function Dashboard({ user, onLogout }) {
   const [policyMisting, setPolicyMisting] = useState(false);
   const [policyConstruction, setPolicyConstruction] = useState(false);
 
-  const netInterventionReduction = (policyEvBan ? 22 : 0) + (policyMisting ? 14 : 0) + (policyConstruction ? 16 : 0);
-  const baselineAqi = Number(liveModelAqi) || 117;
-  const simulatedAqi = Math.max(25, Math.round(baselineAqi * (1 - (netInterventionReduction / 100))));
+
 
   const [showWaModal, setShowWaModal] = useState(false);
   const [waPhone, setWaPhone] = useState("");
@@ -311,6 +309,11 @@ export default function Dashboard({ user, onLogout }) {
   const effectiveConcentration = currentSafePm * routeMultiplier;
   const inhaledMassUg = Math.round((effectiveConcentration * (ventilationRates[commuteActivity] || 1.2) * (commuteMinutes / 60)) * 10) / 10;
   const cigaretteEquiv = Math.round((inhaledMassUg / 216) * 100) / 100;
+
+    // What-If Dynamic Calculation
+  const netInterventionReduction = (policyEvBan ? 22 : 0) + (policyMisting ? 14 : 0) + (policyConstruction ? 16 : 0);
+  const currentBaseAqi = (typeof liveModelAqi !== 'undefined' && liveModelAqi) ? Number(liveModelAqi) : 117;
+  const simulatedAqi = Math.max(25, Math.round(currentBaseAqi * (1 - (netInterventionReduction / 100))));
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
