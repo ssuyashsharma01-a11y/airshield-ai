@@ -183,190 +183,38 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   const speakAdvisory = () => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const cur = (i18n?.language || 'en').slice(0, 2);
-    const safeWindow = windows?.safeWindow || 'Daytime';
-    const dangerWindow = windows?.dangerWindow || 'Evening';
-    let msg = `AirShield Advisory. Recommended window is ${safeWindow}. Peak accumulation window is ${dangerWindow}.`;
-    if (cur === 'hi') {
-      msg = `एयरशील्ड अलर्ट। सुरक्षित समय ${safeWindow} है और खतरनाक समय ${dangerWindow} है।`;
-    } else if (cur === 'pa') {
-      msg = `ਏਅਰਸ਼ੀਲਡ ਅਲਰਟ। ਬਾਹਰ ਜਾਣ ਲਈ ਸਭ ਤੋਂ ਵਧੀਆ ਸਮਾਂ ${safeWindow} ਹੈ।`;
-    }
-    const utter = new SpeechSynthesisUtterance(msg);
-    utter.lang = cur === 'hi' ? 'hi-IN' : cur === 'pa' ? 'pa-IN' : 'en-US';
-    window.speechSynthesis.speak(utter);
-  };
 
-  const { t, i18n } = useTranslation();
-  const toggleLang = () => {
-    const cur = i18n.language || 'en';
-    const next = cur.startsWith('en') ? 'hi' : cur.startsWith('hi') ? 'pa' : 'en';
-    i18n.changeLanguage(next);
-  };
+    const curLang = (i18n.language || 'en').slice(0, 2);
+    let speechText = "";
+    let langCode = "en-IN";
 
-  
-  const [commuteMinutes, setCommuteMinutes] = useState(30);
-  const [commuteActivity, setCommuteActivity] = useState('cycling');
-  const [routeType, setRouteType] = useState('green');
-
-  const [selectedCity, setSelectedCity] = useState(REGIONS[0]);
-  const [selectedArea, setSelectedArea] = useState(REGIONS[0].areas[0]);
-  const [isUsingGps, setIsUsingGps] = useState(false);
-  const [gpsLoading, setGpsLoading] = useState(false);
-  const [userMode, setUserMode] = useState(USER_MODES[0].id);
-  const [isLive, setIsLive] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [currentPm25, setCurrentPm25] = useState(38);
-  const [currentPm10, setCurrentPm10] = useState(135);
-  const [liveModelAqi, setLiveModelAqi] = useState(115);
-  const [forecastData, setForecastData] = useState([]);
-  const [windows, setWindows] = useState({
-    safeWindow: "3 PM (Optimal Window)",
-    safeAqi: 72,
-    dangerWindow: "6 AM (Peak Accumulation)",
-    dangerAqi: 156
-  });
-
-  const handleCityChange = (cityId) => {
-    setIsUsingGps(false);
-    const city = REGIONS.find(r => r.id === cityId);
-    if (city) {
-      setSelectedCity(city);
-      setSelectedArea(city.areas[0]);
-    }
-  };
-
-  const handleAreaChange = (areaId) => {
-    setIsUsingGps(false);
-    const area = selectedCity.areas.find(a => a.id === areaId);
-    if (area) {
-      setSelectedArea(area);
-    }
-  };
-
-  const handleUseLiveLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
+    if (curLang === 'pa') {
+      speechText = `ਸਾਵਧਾਨ। ਮੌਜੂਦਾ ਹਵਾ ਗੁਣਵੱਤਾ ਸੂਚਕ ਅੰਕ ${liveModelAqi || 117} ਹੈ, ਜੋ ਕਿ ਦਰਮਿਆਨੀ ਤੋਂ ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਆਉਂਦਾ ਹੈ। ਸੰਵੇਦਨਸ਼ੀਲ ਵਿਅਕਤੀ ਬਾਹਰ ਜਾਣ ਵੇਲੇ ਮਾਸਕ ਦੀ ਵਰਤੋਂ ਕਰਨ।`;
+      langCode = "pa-IN";
+    } else if (curLang === 'hi') {
+      speechText = `सावधान। वर्तमान वायु गुणवत्ता सूचकांक ${liveModelAqi || 117} है। संवेदनशील व्यक्ति बाहर जाने से बचें और मास्क का उपयोग करें।`;
+      langCode = "hi-IN";
+    } else {
+      speechText = `Attention. The current air quality index is ${liveModelAqi || 117}. High particulate risk detected. Wear a mask outdoors.`;
+      langCode = "en-US";
     }
 
-    setGpsLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        let placeName = `GPS (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`;
+    const utterance = new SpeechSynthesisUtterance(speechText);
+    utterance.lang = langCode;
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
 
-        try {
-          const revRes = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-          );
-          const revData = await revRes.json();
-          if (revData && revData.address) {
-            placeName = revData.address.suburb || revData.address.city || revData.address.town || revData.address.state_district || placeName;
-          }
-        } catch (e) {
-          console.warn("Reverse geocode fallback", e);
-        }
-
-        const customLocation = {
-          id: 'gps_live',
-          name: placeName,
-          lat: latitude,
-          lon: longitude,
-          basePm25: 30,
-          basePm10: 90
-        };
-
-        setIsUsingGps(true);
-        setSelectedCity({ id: 'current_device', name: 'My Device Location', areas: [customLocation] });
-        setSelectedArea(customLocation);
-        setGpsLoading(false);
-      },
-      (err) => {
-        console.error("GPS access error:", err);
-        alert("Unable to retrieve your location. Please check location permissions.");
-        setGpsLoading(false);
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    );
-  };
-
-  const fetchLiveTelemetry = async () => {
-    setLoading(true);
-    try {
-      let pm25 = selectedArea.basePm25;
-      let pm10 = selectedArea.basePm10;
-
-      if (isLive) {
-        try {
-          const res = await fetch(
-            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${selectedArea.lat}&longitude=${selectedArea.lon}&current=pm10,pm2_5&timezone=Asia%2FKolkata`
-          );
-          const data = await res.json();
-          if (data?.current?.pm2_5 != null) pm25 = Math.round(data.current.pm2_5);
-          if (data?.current?.pm10 != null) {
-            pm10 = Math.round(data.current.pm10);
-          } else {
-            pm10 = Math.round(pm25 * 3.2);
-          }
-        } catch (e) {
-          console.warn("Open-Meteo fallback:", e);
-        }
-      }
-
-      if (selectedArea.id.includes('anand_vihar') && pm10 < 115) {
-        pm10 = Math.round(Math.max(pm10 * 1.5, 125));
-      } else if (selectedArea.id.includes('ind_area') && pm10 < 95) {
-        pm10 = Math.round(Math.max(pm10 * 1.3, 105));
-      }
-
-      setCurrentPm25(pm25);
-      setCurrentPm10(pm10);
-
-      const cpcbComposite = Math.max(
-        getCpcbSubIndexPm25(pm25),
-        getCpcbSubIndexPm10(pm10)
-      );
-
-      const mlRes = await fetch(
-        `${BACKEND_URL}/api/predict?lat=${selectedArea.lat}&lon=${selectedArea.lon}&current_pm=${pm25}&current_pm10=${pm10}`
-      );
-      const mlData = await mlRes.json();
-
-      if (mlData && Array.isArray(mlData.forecast) && mlData.forecast.length > 0) {
-        setForecastData(mlData.forecast);
-        setLiveModelAqi(mlData.forecast[0].aqi || cpcbComposite);
-        if (mlData.windows) {
-          setWindows({
-            safeWindow: mlData.windows.safeWindow.replace("Safe Valley", "Optimal Window"),
-            safeAqi: mlData.windows.safeAqi,
-            dangerWindow: mlData.windows.dangerWindow.replace("Peak Thermal Inversion", "Peak Accumulation Risk"),
-            dangerAqi: mlData.windows.dangerAqi
-          });
-        }
-      } else {
-        setLiveModelAqi(cpcbComposite);
-      }
-    } catch (err) {
-      console.error("Backend error:", err);
-      setLiveModelAqi(Math.max(getCpcbSubIndexPm25(currentPm25), getCpcbSubIndexPm10(currentPm10)));
-    } finally {
-      setLoading(false);
+    // Fallback voice selection for Punjabi if native pa-IN voice is missing in Windows/browser
+    const voices = window.speechSynthesis.getVoices();
+    if (curLang === 'pa') {
+      const paVoice = voices.find(v => v.lang.startsWith('pa')) || voices.find(v => v.lang.startsWith('hi'));
+      if (paVoice) utterance.voice = paVoice;
     }
+
+    window.speechSynthesis.speak(utterance);
   };
-
-  useEffect(() => {
-    fetchLiveTelemetry();
-  }, [selectedArea, isLive]);
-
-  const aqiInfo = getAqiCategory(liveModelAqi);
-  const isRecommendedWindow = userMode === "sensitive" ? liveModelAqi <= 95 : liveModelAqi <= 125;
-
-  
-  // Safe Calculations for Dosimetry & Green Route
-  const ventilationRates = { walking: 1.2, cycling: 2.4, driving: 0.6 };
   const currentSafePm = (selectedArea && selectedArea.pm25) ? selectedArea.pm25 : 65;
   const routeMultiplier = routeType === 'green' ? 0.62 : 1.28;
   const effectiveConcentration = currentSafePm * routeMultiplier;
