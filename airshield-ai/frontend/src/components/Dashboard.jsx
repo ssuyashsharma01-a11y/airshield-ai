@@ -89,6 +89,59 @@ function getAqiCategory(aqi) {
   return { label: "Severe", color: "text-purple-500" };
 }
 
+
+// Production Trilingual Dictionary (Module-level singleton)
+const LANG_DICTIONARY = {
+  en: {
+    elevated: "Elevated Exposure Period",
+    forecastHeading: "Atmospheric Particulate Forecast",
+    forecastSub: "Forecast Horizon: Next 24 Hours • Random Forest Regressor fit on CPCB observations",
+    windowPlanner: "Activity Exposure Window Planner",
+    optimalWindow: "OPTIMAL OUTDOOR WINDOW",
+    peakWindow: "PEAK PARTICULATE ACCUMULATION RISK",
+    lifestyleHeading: "Lifestyle & Nutritional Awareness",
+    lifestyleSub: "Nutritional awareness & traditional dietary foods commonly consumed during high pollution exposure",
+    habit1Title: "Habit 1 • Airway Hydration",
+    habit1Desc: "Traditional warm jaggery (Gud) and ginger infusion commonly consumed for general upper respiratory comfort.",
+    habit2Title: "Habit 2 • Antioxidant Rich Foods",
+    habit2Desc: "Fresh Indian Gooseberry (Amla) or citrus fruits providing natural dietary Vitamin C for daily wellness.",
+    habit3Title: "Habit 3 • Dietary Botanical Support",
+    habit3Desc: "Traditional golden turmeric infusion with black pepper commonly recognized for supportive dietary properties."
+  },
+  hi: {
+    elevated: "उच्च वायु प्रदूषण जोखिम अवधि",
+    forecastHeading: "वायुमंडलीय कण पूर्वानुमान (24 घंटे)",
+    forecastSub: "पूर्वानुमान क्षितिज: आगामी 24 घंटे • CPCB अवलोकनों पर आधारित रैंडम फ़ॉरेस्ट मॉडल",
+    windowPlanner: "दैनिक गतिविधि एवं स्वास्थ्य योजनाकार",
+    optimalWindow: "अनुकूलतम बाहरी समय",
+    peakWindow: "चरम प्रदूषण संचय जोखिम",
+    lifestyleHeading: "पारंपरिक स्वास्थ्य एवं पोषण जागरूकता",
+    lifestyleSub: "उच्च प्रदूषण के दौरान फेफड़ों की सुरक्षा हेतु पारंपरिक भारतीय आहार",
+    habit1Title: "नियम 1 • श्वसन मार्ग जलयोजन",
+    habit1Desc: "गुड़ और अदरक का काढ़ा श्वसन नली को साफ़ और नम रखने में सहायक है।",
+    habit2Title: "नियम 2 • एंटीऑक्सीडेंट युक्त आहार",
+    habit2Desc: "ताज़ा आंवला और खट्टे फल जो प्राकृतिक विटामिन सी प्रदान कर प्रतिरोधक क्षमता बढ़ाते हैं।",
+    habit3Title: "नियम 3 • हल्दी एवं पादप पोषण",
+    habit3Desc: "काली मिर्च के साथ पारंपरिक हल्दी वाला दूध सूजन रोधी सुरक्षा प्रदान करता है।"
+  },
+  pa: {
+    elevated: "ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਪ੍ਰਭਾਵ ਸਮਾਂ",
+    forecastHeading: "ਵਾਯੂਮੰਡਲੀ ਕਣ ਪੂਰਵ-ਅਨੁਮਾਨ (24 ਘੰਟੇ)",
+    forecastSub: "ਪੂਰਵ-ਅਨੁਮਾਨ: ਅਗਲੇ 24 ਘੰਟੇ • CPCB ਨਿਰੀਖਣਾਂ ਤੇ ਆਧਾਰਿਤ ਰੈਂਡਮ ਫੋਰੈਸਟ ਮਾਡਲ",
+    windowPlanner: "ਗਤੀਵਿਧੀ ਅਤੇ ਸਿਹਤ ਯੋਜਨਾਕਾਰ",
+    optimalWindow: "ਸਭ ਤੋਂ ਅਨੁਕੂਲ ਬਾਹਰੀ ਸਮਾਂ",
+    peakWindow: "ਸਭ ਤੋਂ ਵੱਧ ਪ੍ਰਦੂਸ਼ਣ ਇਕੱਠਾ ਹੋਣ ਦਾ ਖ਼ਤਰਾ",
+    lifestyleHeading: "ਰਵਾਇਤੀ ਸਿਹਤ ਅਤੇ ਪੋਸ਼ਣ ਜਾਗਰੂਕਤਾ",
+    lifestyleSub: "ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਦੌਰਾਨ ਸਾਹ ਪ੍ਰਣਾਲੀ ਦੀ ਸੁਰੱਖਿਆ ਲਈ ਰਵਾਇਤੀ ਖੁਰਾਕੀ ਉਪਾਅ",
+    habit1Title: "ਨਿਯਮ 1 • ਸਾਹ ਨਲੀ ਦੀ ਸੰਭਾਲ",
+    habit1Desc: "ਗੁੜ ਅਤੇ ਅਦਰਕ ਦਾ ਕਾੜ੍ਹਾ ਸਾਹ ਨਲੀ ਨੂੰ ਸਾਫ਼ ਅਤੇ ਨਮੀ ਪ੍ਰਦਾਨ ਕਰਨ ਵਿੱਚ ਸਹਾਇਕ ਹੈ੤",
+    habit2Title: "ਨਿਯਮ 2 • ਐਂਟੀਆਕਸੀਡੈਂਟ ਭਰਪੂਰ ਖੁਰਾਕ",
+    habit2Desc: "ਤਾਜ਼ਾ ਔਂਵਲਾ ਜਾਂ ਖੱਟੇ ਫਲ ਜੋ ਕੁਦਰਤੀ ਵਿਟਾਮਿਨ ਸੀ ਦੇ ਕੇ ਤੰਦਰੁਸਤੀ ਵਧਾਉਂਦੇ ਹਨ੤",
+    habit3Title: "ਨਿਯਮ 3 • ਰਵਾਇਤੀ ਹਲਦੀ ਅਤੇ ਜੜ੍ਹੀ-ਬੂਟੀਆਂ",
+    habit3Desc: "ਕਾਲੀ ਮਿਰਚ ਨਾਲ ਸੁਨਹਿਰੀ ਹਲਦੀ ਵਾਲਾ ਦੁੱਧ ਸਰੀਰਕ ਸੁਰੱਖਿਆ ਲਈ ਲਾਭਦਾਇਕ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ੤"
+  }
+};
+
 export default function Dashboard({ user, onLogout }) {
 
   
@@ -106,6 +159,7 @@ export default function Dashboard({ user, onLogout }) {
 
 
 
+  const [activeLang, setActiveLang] = useState('en');
   const [showWaModal, setShowWaModal] = useState(false);
   const [waPhone, setWaPhone] = useState("");
   const [waSubscribed, setWaSubscribed] = useState(false);
@@ -331,64 +385,12 @@ export default function Dashboard({ user, onLogout }) {
   
   // Localized Content Dictionary
   const lang = i18n?.language?.slice(0, 2) || 'en';
-  const dict = {
-    en: {
-      elevated: "{tStr.elevated}",
-      lowerSlot: "Lower-exposure slot",
-      optimalLower: "Optimal Lower-Exposure",
-      forecastHeading: "{tStr.forecastHeading}",
-      forecastSub: "Forecast Horizon: Next 24 Hours • Random Forest Regressor fit on CPCB observations",
-      windowPlanner: "{tStr.windowPlanner}",
-      optimalWindow: "OPTIMAL OUTDOOR WINDOW",
-      peakWindow: "PEAK PARTICULATE ACCUMULATION RISK",
-      lifestyleHeading: "{tStr.lifestyleHeading}",
-      lifestyleSub: "{tStr.lifestyleSub}",
-      habit1Title: "Airway Hydration",
-      habit1Desc: "{tStr.habit1Desc}",
-      habit2Title: "Antioxidant Rich Foods",
-      habit2Desc: "{tStr.habit2Desc}",
-      habit3Title: "Dietary Botanical Support",
-      habit3Desc: "Traditional golden turmeric infusion with black pepper commonly recognized for supportive dietary properties."
-    },
-    hi: {
-      elevated: "उच्च वायु प्रदूषण जोखिम अवधि",
-      lowerSlot: "सुरक्षित समय स्लॉट",
-      optimalLower: "न्यूनतम जोखिम समय",
-      forecastHeading: "वायुमंडलीय कण पूर्वानुमान (24 घंटे)",
-      forecastSub: "पूर्वानुमान क्षितिज: आगामी 24 घंटे • CPCB अवलोकनों पर आधारित रैंडम फ़ॉरेस्ट मॉडल",
-      windowPlanner: "दैनिक गतिविधि एवं स्वास्थ्य योजनाकार",
-      optimalWindow: "अनुकूलतम बाहरी समय",
-      peakWindow: "चरम प्रदूषण संचय जोखिम",
-      lifestyleHeading: "पारंपरिक स्वास्थ्य एवं पोषण जागरूकता",
-      lifestyleSub: "उच्च प्रदूषण के दौरान फेफड़ों की सुरक्षा हेतु पारंपरिक भारतीय आहार",
-      habit1Title: "श्वसन मार्ग जलयोजन",
-      habit1Desc: "गुड़ और अदरक का काढ़ा श्वसन नली को साफ और नम रखने में सहायक है।",
-      habit2Title: "एंटीऑक्सीडेंट युक्त आहार",
-      habit2Desc: "ताज़ा आंवला और खट्टे फल जो प्राकृतिक विटामिन सी प्रदान कर प्रतिरोधक क्षमता बढ़ाते हैं।",
-      habit3Title: "हल्दी एवं पादप पोषण",
-      habit3Desc: "काली मिर्च के साथ पारंपरिक हल्दी वाला दूध सूजन रोधी सुरक्षा प्रदान करता है।"
-    },
-    pa: {
-      elevated: "ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਪ੍ਰਭਾਵ ਸਮਾਂ",
-      lowerSlot: "ਸੁਰੱਖਿਅਤ ਬਾਹਰੀ ਸਮਾਂ",
-      optimalLower: "ਘੱਟੋ-ਘੱਟ ਜੋਖਮ ਸਮਾਂ",
-      forecastHeading: "ਵਾਯੂਮੰਡਲੀ ਕਣ ਪੂਰਵ-ਅਨੁਮਾਨ (24 ਘੰਟੇ)",
-      forecastSub: "ਪੂਰਵ-ਅਨੁਮਾਨ: ਅਗਲੇ 24 ਘੰਟੇ • CPCB ਨਿਰੀਖਣਾਂ ਤੇ ਆਧਾਰਿਤ ਰੈਂਡਮ ਫੋਰੈਸਟ ਮਾਡਲ",
-      windowPlanner: "ਗਤੀਵਿਧੀ ਅਤੇ ਸਿਹਤ ਯੋਜਨਾਕਾਰ",
-      optimalWindow: "ਸਭ ਤੋਂ ਅਨੁਕੂਲ ਬਾਹਰੀ ਸਮਾਂ",
-      peakWindow: "ਸਭ ਤੋਂ ਵੱਧ ਪ੍ਰਦੂਸ਼ਣ ਇਕੱਠਾ ਹੋਣ ਦਾ ਖ਼ਤਰਾ",
-      lifestyleHeading: "ਰਵਾਇਤੀ ਸਿਹਤ ਅਤੇ ਪੋਸ਼ਣ ਜਾਗਰੂਕਤਾ",
-      lifestyleSub: "ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਦੌਰਾਨ ਸਾਹ ਪ੍ਰਣਾਲੀ ਦੀ ਸੁਰੱਖਿਆ ਲਈ ਰਵਾਇਤੀ ਖੁਰਾਕੀ ਉਪਾਅ",
-      habit1Title: "ਸਾਹ ਨਲੀ ਦੀ ਸੰਭਾਲ",
-      habit1Desc: "ਗੁੜ ਅਤੇ ਅਦਰਕ ਦਾ ਕਾੜ੍ਹਾ ਸਾਹ ਨਲੀ ਨੂੰ ਸਾਫ਼ ਅਤੇ ਨਮੀ ਪ੍ਰਦਾਨ ਕਰਨ ਵਿੱਚ ਸਹਾਇਕ ਹੈ।",
-      habit2Title: "ਐਂਟੀਆਕਸੀਡੈਂਟ ਭਰਪੂਰ ਖੁਰਾਕ",
-      habit2Desc: "ਤਾਜ਼ਾ ਔਂਵਲਾ ਜਾਂ ਖੱਟੇ ਫਲ ਜੋ ਕੁਦਰਤੀ ਵਿਟਾਮਿਨ ਸੀ ਦੇ ਕੇ ਤੰਦਰੁਸਤੀ ਵਧਾਉਂਦੇ ਹਨ।",
-      habit3Title: "ਰਵਾਇਤੀ ਹਲਦੀ ਅਤੇ ਜੜ੍ਹੀ-ਬੂਟੀਆਂ",
-      habit3Desc: "ਕਾਲੀ ਮਿਰਚ ਨਾਲ ਸੁਨਹਿਰੀ ਹਲਦੀ ਵਾਲਾ ਦੁੱਧ ਸਰੀਰਕ ਸੁਰੱਖਿਆ ਲਈ ਲਾਭਦਾਇਕ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ।"
-    }
-  };
-  const tStr = dict[lang] || dict['en'];
+  
 
+  
+  
+
+    const activeT = LANG_DICTIONARY[activeLang] || LANG_DICTIONARY['en'];
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
@@ -664,7 +666,7 @@ export default function Dashboard({ user, onLogout }) {
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-bold text-white">{tStr.forecastHeading} ({selectedArea.name})</h2>
+                <h2 className="text-sm font-bold text-white">{activeT.forecastHeading} ({selectedArea.name})</h2>
                 <p className="text-xs text-slate-400">Forecast Horizon: Next 24 Hours • Random Forest Regressor fit on CPCB observations</p>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
@@ -1036,7 +1038,7 @@ export default function Dashboard({ user, onLogout }) {
 
       <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-400" /> {tStr.windowPlanner}
+                <Clock className="w-4 h-4 text-amber-400" /> {activeT.windowPlanner}
               </h3>
               <span className="text-[11px] text-slate-400">Proactive Activity Scheduling</span>
             </div>
@@ -1068,10 +1070,10 @@ export default function Dashboard({ user, onLogout }) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Apple className="w-4 h-4 text-emerald-400" /> {tStr.lifestyleHeading}
+                  <Apple className="w-4 h-4 text-emerald-400" /> {activeT.lifestyleHeading}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  {tStr.lifestyleSub}
+                  {activeT.lifestyleSub}
                 </p>
               </div>
               <span className="text-[11px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded font-medium flex items-center gap-1">
@@ -1083,11 +1085,11 @@ export default function Dashboard({ user, onLogout }) {
               {[
                 { 
                   title: "Airway Hydration", 
-                  desc: "{tStr.habit1Desc}" 
+                  desc: "{activeT.habit1Desc}" 
                 },
                 { 
                   title: "Antioxidant Rich Foods", 
-                  desc: "{tStr.habit2Desc}" 
+                  desc: "{activeT.habit2Desc}" 
                 },
                 { 
                   title: "Dietary Botanical Support", 
