@@ -151,6 +151,7 @@ export default function Dashboard({ user, onLogout }) {
   
   // Indoor HEPA Purifier State
   const [roomAreaSqFt, setRoomAreaSqFt] = useState(250);
+  const [activeEngineTab, setActiveEngineTab] = useState('commute');
   const [purifierCadrCfm, setPurifierCadrCfm] = useState(180);
 
   const [policyEvBan, setPolicyEvBan] = useState(false);
@@ -738,7 +739,48 @@ export default function Dashboard({ user, onLogout }) {
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+              
+        {/* SUITE_SEGMENT_CONTROLS */}
+        <div className="col-span-full bg-slate-900/90 border border-slate-800 p-1.5 rounded-xl flex items-center gap-1.5 backdrop-blur-md mb-3">
+          <button
+            type="button"
+            onClick={() => setActiveEngineTab('commute')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition ${
+              activeEngineTab === 'commute' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🧭 Commute
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveEngineTab('dosimetry')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition ${
+              activeEngineTab === 'dosimetry' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🫁 Dosimetry
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveEngineTab('hepa')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition ${
+              activeEngineTab === 'hepa' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🌀 HEPA
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveEngineTab('policy')}
+            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition ${
+              activeEngineTab === 'policy' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            ⚙ Policy
+          </button>
+        </div>
+    
+<div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
                 <Navigation className="w-5 h-5" />
               </div>
               <div>
