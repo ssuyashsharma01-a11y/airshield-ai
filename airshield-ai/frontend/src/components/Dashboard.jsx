@@ -696,9 +696,9 @@ export default function Dashboard({ user, onLogout }) {
               <span className="text-xs text-slate-300 font-medium">Activity:</span>
               <div className="flex gap-1.5">
                 {[
-                  { id: 'walking', label: 'Walking', icon: Footprints },
-                  { id: 'cycling', label: 'Cycling', icon: Bike },
-                  { id: 'driving', label: 'In-Cabin', icon: Car }
+                  { id: 'walking', label: 'Walking', icon: 'Walking' },
+                  { id: 'cycling', label: 'Cycling', icon: 'Cycling' },
+                  { id: 'driving', label: 'In-Cabin', icon: 'Vehicle' }
                 ].map((act) => {
                   const Icon = act.icon;
                   return (
