@@ -428,7 +428,7 @@ export default function Dashboard({ user, onLogout }) {
     window.print();
   };
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans" print:hidden>
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans dashboard-screen-only" print:hidden>
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
@@ -1320,7 +1320,7 @@ export default function Dashboard({ user, onLogout }) {
 
 
       {/* 1-PAGE CLINICAL AUDIT PRINT CONTAINER */}
-      <div id="audit-pdf-print-root" style={{ display: 'none' }}>
+      <div id="audit-pdf-print-root" className="clinical-print-only">
         <div style={{ borderBottom: '2px solid #0284c7', paddingBottom: '10px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#0284c7' }}>AirShield AI</h1>
