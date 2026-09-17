@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   ShieldCheck, Activity, Clock, Sun, Flame, 
-  Sparkles, HeartPulse, RefreshCw, Apple, LogOut,
+  Sparkles, HeartPulse, RefreshCw, Bike, Footprints, Apple, LogOut,
   Wind, Droplets, Thermometer, CheckCircle2, AlertTriangle,
   GitBranch, Database, MapPin, Navigation
 } from 'lucide-react';
@@ -92,6 +92,11 @@ function getAqiCategory(aqi) {
 export default function Dashboard({ user, onLogout }) {
   const { t, i18n } = useTranslation();
   const toggleLang = () => i18n.changeLanguage(i18n.language && i18n.language.startsWith('hi') ? 'en' : 'hi');
+
+  
+  const [commuteMinutes, setCommuteMinutes] = useState(30);
+  const [commuteActivity, setCommuteActivity] = useState('cycling');
+  const [routeType, setRouteType] = useState('green');
 
   const [selectedCity, setSelectedCity] = useState(REGIONS[0]);
   const [selectedArea, setSelectedArea] = useState(REGIONS[0].areas[0]);
@@ -245,6 +250,15 @@ export default function Dashboard({ user, onLogout }) {
 
   const aqiInfo = getAqiCategory(liveModelAqi);
   const isRecommendedWindow = userMode === "sensitive" ? liveModelAqi <= 95 : liveModelAqi <= 125;
+
+  
+  // Safe Calculations for Dosimetry & Green Route
+  const ventilationRates = { walking: 1.2, cycling: 2.4, driving: 0.6 };
+  const currentSafePm = (selectedArea && selectedArea.pm25) ? selectedArea.pm25 : 65;
+  const routeMultiplier = routeType === 'green' ? 0.62 : 1.28;
+  const effectiveConcentration = currentSafePm * routeMultiplier;
+  const inhaledMassUg = Math.round((effectiveConcentration * (ventilationRates[commuteActivity] || 1.2) * (commuteMinutes / 60)) * 10) / 10;
+  const cigaretteEquiv = Math.round((inhaledMassUg / 216) * 100) / 100;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
