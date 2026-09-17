@@ -99,7 +99,7 @@ const LANG_DICTIONARY = {
     windowPlanner: "Activity Exposure Window Planner",
     optimalWindow: "OPTIMAL OUTDOOR WINDOW",
     peakWindow: "PEAK PARTICULATE ACCUMULATION RISK",
-    lifestyleHeading: "Lifestyle & Nutritional Awareness",
+    lifestyleHeading: "Lifestyle & Supportive Nutrition",
     lifestyleSub: "Nutritional awareness & traditional dietary foods commonly consumed during high pollution exposure",
     habit1Title: "Habit 1 • Airway Hydration",
     habit1Desc: "Traditional warm jaggery (Gud) and ginger infusion commonly consumed for general upper respiratory comfort.",
@@ -803,7 +803,7 @@ export default function Dashboard({ user, onLogout }) {
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 h-full flex flex-col justify-between">
                 <Flame className="w-5 h-5" />
               </div>
               <div>
@@ -949,7 +949,7 @@ export default function Dashboard({ user, onLogout }) {
             </div>
           </div>
 
-          <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between h-full flex flex-col justify-between">
             <div className="space-y-2">
               <div className="text-xs font-semibold text-white flex items-center justify-between">
                 <span>Indoor vs Outdoor Gradient</span>
