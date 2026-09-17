@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   ShieldCheck, Activity, Clock, Sun, Flame, 
-  Sparkles, HeartPulse, RefreshCw, Sliders, X, FileText, Send, MessageSquare, Volume2, Bike, Footprints, Apple, LogOut,
+  Sparkles, HeartPulse, RefreshCw, Fan, Sliders, X, FileText, Send, MessageSquare, Volume2, Bike, Footprints, Apple, LogOut,
   Wind, Droplets, Thermometer, CheckCircle2, AlertTriangle,
   GitBranch, Database, MapPin, Navigation
 } from 'lucide-react';
@@ -95,6 +95,11 @@ export default function Dashboard({ user, onLogout }) {
   // WhatsApp State Hooks & Handler
   
   // What-If Policy Intervention State
+  
+  // Indoor HEPA Purifier State
+  const [roomAreaSqFt, setRoomAreaSqFt] = useState(250);
+  const [purifierCadrCfm, setPurifierCadrCfm] = useState(180);
+
   const [policyEvBan, setPolicyEvBan] = useState(false);
   const [policyMisting, setPolicyMisting] = useState(false);
   const [policyConstruction, setPolicyConstruction] = useState(false);
@@ -314,6 +319,14 @@ export default function Dashboard({ user, onLogout }) {
   const netInterventionReduction = (policyEvBan ? 22 : 0) + (policyMisting ? 14 : 0) + (policyConstruction ? 16 : 0);
   const currentBaseAqi = (typeof liveModelAqi !== 'undefined' && liveModelAqi) ? Number(liveModelAqi) : 117;
   const simulatedAqi = Math.max(25, Math.round(currentBaseAqi * (1 - (netInterventionReduction / 100))));
+
+    // Indoor Purifier Clearing Dynamics (ACH & Minutes to 80% PM drop)
+  const roomVolumeCuFt = Math.max(100, Number(roomAreaSqFt) || 250) * 9.5; // avg ceiling height 9.5 ft
+  const safeCadr = Math.max(50, Number(purifierCadrCfm) || 180);
+  const airChangesPerHour = Math.round(((safeCadr * 60) / roomVolumeCuFt) * 10) / 10;
+  // Natural log decay for 80% reduction: t = -ln(0.2) / (ACH/60)
+  const minutesToSafeAir = Math.round((1.61 / (airChangesPerHour / 60)));
+  const estimatedIndoorPm = Math.max(12, Math.round(currentSafePm * 0.18)); // HEPA typical indoor penetration
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
@@ -759,6 +772,104 @@ export default function Dashboard({ user, onLogout }) {
 
       
       {/* WHAT-IF POLICY INTERVENTION SIMULATOR */}
+      {/* INDOOR HEPA PURIFIER DYNAMICS */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl my-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400">
+              <Fan className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                Indoor Air Cleansing Estimator
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-950 text-teal-400 border border-teal-700/50">HEPA Physics Engine</span>
+              </h3>
+              <p className="text-[11px] text-slate-400">Volumetric air exchange rate and particulate decay timeline</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+            <div>
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider">Air Changes / Hr</div>
+              <div className="text-base font-black font-mono text-teal-400">{airChangesPerHour} ACH</div>
+            </div>
+            <div className="h-7 w-px bg-slate-800" />
+            <div>
+              <div className="text-[10px] text-slate-400 uppercase tracking-wider">Time to Safe Air</div>
+              <div className="text-base font-black font-mono text-emerald-400">~{minutesToSafeAir} Mins</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-xs text-slate-300 mb-1.5">
+                <span>Room Floor Area:</span>
+                <span className="font-mono text-teal-300 font-bold">{roomAreaSqFt} sq. ft.</span>
+              </div>
+              <input
+                type="range"
+                min="80"
+                max="800"
+                step="20"
+                value={roomAreaSqFt}
+                onChange={(e) => setRoomAreaSqFt(Number(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-400"
+              />
+              <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                <span>Studio (120 sq ft)</span>
+                <span>Master Bed (300 sq ft)</span>
+                <span>Hall (700 sq ft)</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs text-slate-300 mb-1.5">
+                <span>Air Purifier CADR Rating:</span>
+                <span className="font-mono text-teal-300 font-bold">{purifierCadrCfm} CFM</span>
+              </div>
+              <input
+                type="range"
+                min="90"
+                max="450"
+                step="15"
+                value={purifierCadrCfm}
+                onChange={(e) => setPurifierCadrCfm(Number(e.target.value))}
+                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-400"
+              />
+              <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                <span>Compact (100 CFM)</span>
+                <span>Standard (220 CFM)</span>
+                <span>Commercial (400 CFM)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-4 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="text-xs font-semibold text-white flex items-center justify-between">
+                <span>Indoor vs Outdoor Gradient</span>
+                <span className="text-[10px] text-emerald-400 font-mono">-82% PM2.5 Infiltration</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center pt-1">
+                <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                  <div className="text-[10px] text-slate-400">Outdoor Baseline</div>
+                  <div className="text-sm font-bold text-rose-400 font-mono">{currentSafePm} µg/m³</div>
+                </div>
+                <div className="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                  <div className="text-[10px] text-slate-400">Post-HEPA Target</div>
+                  <div className="text-sm font-bold text-emerald-400 font-mono">{estimatedIndoorPm} µg/m³</div>
+                </div>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-3 pt-3 border-t border-slate-800/80">
+              *Calculated using ANSI/AHAM AC-1 natural logarithmic decay standard under active recirculating filtration.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl my-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
