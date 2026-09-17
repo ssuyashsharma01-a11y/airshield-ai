@@ -1,4 +1,3 @@
-import i18n from '../i18n';
 ﻿import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -143,17 +142,7 @@ const LANG_DICTIONARY = {
   }
 };
 
-
-// Physiological ventilation rates (L/min)
-const ventilationRates = {
-  resting: 6.5,
-  walking: 14.0,
-  cycling: 32.0,
-  running: 45.0
-};
-
 export default function Dashboard({ user, onLogout }) {
-  const { t, i18n } = useTranslation();
 
   
   // WhatsApp State Hooks & Handler
@@ -164,9 +153,6 @@ export default function Dashboard({ user, onLogout }) {
   const [roomAreaSqFt, setRoomAreaSqFt] = useState(250);
   const [purifierCadrCfm, setPurifierCadrCfm] = useState(180);
 
-    const [commuteMinutes, setCommuteMinutes] = useState(30);
-  const [commuteActivity, setCommuteActivity] = useState('cycling');
-  const [routeType, setRouteType] = useState('green');
   const [policyEvBan, setPolicyEvBan] = useState(false);
   const [policyMisting, setPolicyMisting] = useState(false);
   const [policyConstruction, setPolicyConstruction] = useState(false);
@@ -185,7 +171,7 @@ export default function Dashboard({ user, onLogout }) {
     const safeWindow = windows?.safeWindow || 'Daytime';
     const dangerWindow = windows?.dangerWindow || 'Evening';
     let alertMsg = `*AirShield AI Daily Advisory (+91 ${cleanNum})*%0A%0A`
-      + `📍 Location: ${(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)")?.name || 'Local Station'}%0A`
+      + `📍 Location: ${selectedArea?.name || 'Local Station'}%0A`
       + `📊 Current AQI: ${liveModelAqi || 100}%0A`
       + `🟢 Optimal Window: ${safeWindow}%0A`
       + `🔴 Peak Risk: ${dangerWindow}%0A%0A`
@@ -197,39 +183,190 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   const speakAdvisory = () => {
-    if (!('speechSynthesis' in window)) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-
-    const curLang = (i18n.language || 'en').slice(0, 2);
-    let speechText = "";
-    let langCode = "en-IN";
-
-    if (curLang === 'pa') {
-      speechText = `ਸਾਵਧਾਨ। ਮੌਜੂਦਾ ਹਵਾ ਗੁਣਵੱਤਾ ਸੂਚਕ ਅੰਕ ${liveModelAqi || 117} ਹੈ, ਜੋ ਕਿ ਦਰਮਿਆਨੀ ਤੋਂ ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਆਉਂਦਾ ਹੈ। ਸੰਵੇਦਨਸ਼ੀਲ ਵਿਅਕਤੀ ਬਾਹਰ ਜਾਣ ਵੇਲੇ ਮਾਸਕ ਦੀ ਵਰਤੋਂ ਕਰਨ।`;
-      langCode = "pa-IN";
-    } else if (curLang === 'hi') {
-      speechText = `सावधान। वर्तमान वायु गुणवत्ता सूचकांक ${liveModelAqi || 117} है। संवेदनशील व्यक्ति बाहर जाने से बचें और मास्क का उपयोग करें।`;
-      langCode = "hi-IN";
-    } else {
-      speechText = `Attention. The current air quality index is ${liveModelAqi || 117}. High particulate risk detected. Wear a mask outdoors.`;
-      langCode = "en-US";
+    const cur = (i18n?.language || 'en').slice(0, 2);
+    const safeWindow = windows?.safeWindow || 'Daytime';
+    const dangerWindow = windows?.dangerWindow || 'Evening';
+    let msg = `AirShield Advisory. Recommended window is ${safeWindow}. Peak accumulation window is ${dangerWindow}.`;
+    if (cur === 'hi') {
+      msg = `एयरशील्ड अलर्ट। सुरक्षित समय ${safeWindow} है और खतरनाक समय ${dangerWindow} है।`;
+    } else if (cur === 'pa') {
+      msg = `ਏਅਰਸ਼ੀਲਡ ਅਲਰਟ। ਬਾਹਰ ਜਾਣ ਲਈ ਸਭ ਤੋਂ ਵਧੀਆ ਸਮਾਂ ${safeWindow} ਹੈ।`;
     }
-
-    const utterance = new SpeechSynthesisUtterance(speechText);
-    utterance.lang = langCode;
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-
-    // Fallback voice selection for Punjabi if native pa-IN voice is missing in Windows/browser
-    const voices = window.speechSynthesis.getVoices();
-    if (curLang === 'pa') {
-      const paVoice = voices.find(v => v.lang.startsWith('pa')) || voices.find(v => v.lang.startsWith('hi'));
-      if (paVoice) utterance.voice = paVoice;
-    }
-
-    window.speechSynthesis.speak(utterance);
+    const utter = new SpeechSynthesisUtterance(msg);
+    utter.lang = cur === 'hi' ? 'hi-IN' : cur === 'pa' ? 'pa-IN' : 'en-US';
+    window.speechSynthesis.speak(utter);
   };
-  const currentSafePm = ((typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)") && (typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").pm25) ? (typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").pm25 : 65;
+
+  const { t, i18n } = useTranslation();
+  const toggleLang = () => {
+    const l = i18n.language || 'en';
+    i18n.changeLanguage(l.startsWith('en') ? 'hi' : l.startsWith('hi') ? 'pa' : 'en');
+  };
+
+  
+  const [commuteMinutes, setCommuteMinutes] = useState(30);
+  const [commuteActivity, setCommuteActivity] = useState('cycling');
+  const [routeType, setRouteType] = useState('green');
+
+  const [selectedCity, setSelectedCity] = useState(REGIONS[0]);
+  const [selectedArea, setSelectedArea] = useState(REGIONS[0].areas[0]);
+  const [isUsingGps, setIsUsingGps] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [userMode, setUserMode] = useState(USER_MODES[0].id);
+  const [isLive, setIsLive] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [currentPm25, setCurrentPm25] = useState(38);
+  const [currentPm10, setCurrentPm10] = useState(135);
+  const [liveModelAqi, setLiveModelAqi] = useState(115);
+  const [forecastData, setForecastData] = useState([]);
+  const [windows, setWindows] = useState({
+    safeWindow: "3 PM (Optimal Window)",
+    safeAqi: 72,
+    dangerWindow: "6 AM (Peak Accumulation)",
+    dangerAqi: 156
+  });
+
+  const handleCityChange = (cityId) => {
+    setIsUsingGps(false);
+    const city = REGIONS.find(r => r.id === cityId);
+    if (city) {
+      setSelectedCity(city);
+      setSelectedArea(city.areas[0]);
+    }
+  };
+
+  const handleAreaChange = (areaId) => {
+    setIsUsingGps(false);
+    const area = selectedCity.areas.find(a => a.id === areaId);
+    if (area) {
+      setSelectedArea(area);
+    }
+  };
+
+  const handleUseLiveLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        let placeName = `GPS (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`;
+
+        try {
+          const revRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const revData = await revRes.json();
+          if (revData && revData.address) {
+            placeName = revData.address.suburb || revData.address.city || revData.address.town || revData.address.state_district || placeName;
+          }
+        } catch (e) {
+          console.warn("Reverse geocode fallback", e);
+        }
+
+        const customLocation = {
+          id: 'gps_live',
+          name: placeName,
+          lat: latitude,
+          lon: longitude,
+          basePm25: 30,
+          basePm10: 90
+        };
+
+        setIsUsingGps(true);
+        setSelectedCity({ id: 'current_device', name: 'My Device Location', areas: [customLocation] });
+        setSelectedArea(customLocation);
+        setGpsLoading(false);
+      },
+      (err) => {
+        console.error("GPS access error:", err);
+        alert("Unable to retrieve your location. Please check location permissions.");
+        setGpsLoading(false);
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  const fetchLiveTelemetry = async () => {
+    setLoading(true);
+    try {
+      let pm25 = selectedArea.basePm25;
+      let pm10 = selectedArea.basePm10;
+
+      if (isLive) {
+        try {
+          const res = await fetch(
+            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${selectedArea.lat}&longitude=${selectedArea.lon}&current=pm10,pm2_5&timezone=Asia%2FKolkata`
+          );
+          const data = await res.json();
+          if (data?.current?.pm2_5 != null) pm25 = Math.round(data.current.pm2_5);
+          if (data?.current?.pm10 != null) {
+            pm10 = Math.round(data.current.pm10);
+          } else {
+            pm10 = Math.round(pm25 * 3.2);
+          }
+        } catch (e) {
+          console.warn("Open-Meteo fallback:", e);
+        }
+      }
+
+      if (selectedArea.id.includes('anand_vihar') && pm10 < 115) {
+        pm10 = Math.round(Math.max(pm10 * 1.5, 125));
+      } else if (selectedArea.id.includes('ind_area') && pm10 < 95) {
+        pm10 = Math.round(Math.max(pm10 * 1.3, 105));
+      }
+
+      setCurrentPm25(pm25);
+      setCurrentPm10(pm10);
+
+      const cpcbComposite = Math.max(
+        getCpcbSubIndexPm25(pm25),
+        getCpcbSubIndexPm10(pm10)
+      );
+
+      const mlRes = await fetch(
+        `${BACKEND_URL}/api/predict?lat=${selectedArea.lat}&lon=${selectedArea.lon}&current_pm=${pm25}&current_pm10=${pm10}`
+      );
+      const mlData = await mlRes.json();
+
+      if (mlData && Array.isArray(mlData.forecast) && mlData.forecast.length > 0) {
+        setForecastData(mlData.forecast);
+        setLiveModelAqi(mlData.forecast[0].aqi || cpcbComposite);
+        if (mlData.windows) {
+          setWindows({
+            safeWindow: mlData.windows.safeWindow.replace("Safe Valley", "Optimal Window"),
+            safeAqi: mlData.windows.safeAqi,
+            dangerWindow: mlData.windows.dangerWindow.replace("Peak Thermal Inversion", "Peak Accumulation Risk"),
+            dangerAqi: mlData.windows.dangerAqi
+          });
+        }
+      } else {
+        setLiveModelAqi(cpcbComposite);
+      }
+    } catch (err) {
+      console.error("Backend error:", err);
+      setLiveModelAqi(Math.max(getCpcbSubIndexPm25(currentPm25), getCpcbSubIndexPm10(currentPm10)));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveTelemetry();
+  }, [selectedArea, isLive]);
+
+  const aqiInfo = getAqiCategory(liveModelAqi);
+  const isRecommendedWindow = userMode === "sensitive" ? liveModelAqi <= 95 : liveModelAqi <= 125;
+
+  
+  // Safe Calculations for Dosimetry & Green Route
+  const ventilationRates = { walking: 1.2, cycling: 2.4, driving: 0.6 };
+  const currentSafePm = (selectedArea && selectedArea.pm25) ? selectedArea.pm25 : 65;
   const routeMultiplier = routeType === 'green' ? 0.62 : 1.28;
   const effectiveConcentration = currentSafePm * routeMultiplier;
   const inhaledMassUg = Math.round((effectiveConcentration * (ventilationRates[commuteActivity] || 1.2) * (commuteMinutes / 60)) * 10) / 10;
@@ -257,16 +394,6 @@ export default function Dashboard({ user, onLogout }) {
   
 
     const activeT = LANG_DICTIONARY[activeLang] || LANG_DICTIONARY['en'];
-    const safeAreaName = (typeof selectedStation !== 'undefined' ? selectedStation : 'Anand Vihar (ISBT)');
-    // Commute State Fallbacks
-  const currentRouteType = typeof routeType !== 'undefined' ? routeType : 'green';
-  const currentCommuteMinutes = typeof commuteMinutes !== 'undefined' ? commuteMinutes : 30;
-  const currentCommuteActivity = typeof commuteActivity !== 'undefined' ? commuteActivity : 'cycling';
-
-    const safeVentRates = typeof ventilationRates !== 'undefined' ? ventilationRates : { resting: 6.5, walking: 14.0, cycling: 32.0, running: 45.0 };
-    // GPS State Fallback
-  const safeIsUsingGps = typeof safeIsUsingGps !== 'undefined' ? safeIsUsingGps : false;
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
@@ -283,7 +410,7 @@ export default function Dashboard({ user, onLogout }) {
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
               <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{safeIsUsingGps ? "Live Device GPS" : selectedCity.name} › <strong className="text-slate-200">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</strong></span>
+              <span>{isUsingGps ? "Live Device GPS" : selectedCity.name} › <strong className="text-slate-200">{selectedArea.name}</strong></span>
             </p>
           </div>
         </div>
@@ -294,13 +421,13 @@ export default function Dashboard({ user, onLogout }) {
             onClick={handleUseLiveLocation}
             title="Use current GPS location"
             className={`text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border ${
-              safeIsUsingGps 
+              isUsingGps 
                 ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 shadow-lg shadow-cyan-500/20' 
                 : 'bg-slate-900 border-slate-800 text-cyan-400 hover:border-cyan-500/50'
             }`}
           >
             <Navigation className={`w-3.5 h-3.5 ${gpsLoading ? 'animate-spin' : ''}`} />
-            {gpsLoading ? 'Locating...' : (safeIsUsingGps ? 'Live GPS Active' : 'Use My Location')}
+            {gpsLoading ? 'Locating...' : (isUsingGps ? 'Live GPS Active' : 'Use My Location')}
           </button>
 
           {/* Dual Dropdown: City / Area */}
@@ -310,12 +437,12 @@ export default function Dashboard({ user, onLogout }) {
               onChange={(e) => handleCityChange(e.target.value)}
               className="bg-transparent text-xs text-white font-bold px-2 py-1 outline-none cursor-pointer"
             >
-              {safeIsUsingGps && <option value="current_device">My GPS Location</option>}
+              {isUsingGps && <option value="current_device">My GPS Location</option>}
               {REGIONS.map(r => <option key={r.id} value={r.id} className="bg-slate-900 text-slate-200">{r.name}</option>)}
             </select>
             <span className="text-slate-600 text-xs">/</span>
             <select 
-              value={(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").id} 
+              value={selectedArea.id} 
               onChange={(e) => handleAreaChange(e.target.value)}
               className="bg-transparent text-xs text-cyan-400 font-semibold px-2 py-1 outline-none cursor-pointer"
             >
@@ -341,7 +468,7 @@ export default function Dashboard({ user, onLogout }) {
             className="text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border bg-sky-950/60 border-sky-600/50 text-sky-300 hover:bg-sky-900/60 cursor-pointer"
           >
             <span>🌐</span>
-            <span>{(i18n.language || '').startsWith('en') ? 'हिन्दी' : (i18n.language || '').startsWith('hi') ? 'ਪੰਜਾਬੀ' : 'English'}</span>
+            <span>{(i18n.language || '').startsWith('hi') ? 'ਪੰਜਾਬੀ' : (i18n.language || '').startsWith('pa') ? 'English' : 'हिन्दी'}</span>
           </button>
 
           {/* Voice Advisory */}
@@ -446,7 +573,7 @@ export default function Dashboard({ user, onLogout }) {
               <span className={`text-xs font-bold tracking-wider uppercase ${aqiInfo.color}`}>{aqiInfo.label}</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Location: <strong className="text-white">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</strong> • PM2.5 <strong className="text-slate-200">{currentPm25} μg/m³</strong> • PM10 <strong className="text-slate-200">{currentPm10} μg/m³</strong>.
+              Location: <strong className="text-white">{selectedArea.name}</strong> • PM2.5 <strong className="text-slate-200">{currentPm25} μg/m³</strong> • PM10 <strong className="text-slate-200">{currentPm10} μg/m³</strong>.
               Mapped strictly to CPCB sub-indices with dominant pollutant selection.
             </p>
           </div>
@@ -542,7 +669,7 @@ export default function Dashboard({ user, onLogout }) {
           <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-bold text-white">{activeT.forecastHeading} ({(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name})</h2>
+                <h2 className="text-sm font-bold text-white">{activeT.forecastHeading} ({selectedArea.name})</h2>
                 <p className="text-xs text-slate-400">Forecast Horizon: Next 24 Hours • Random Forest Regressor fit on CPCB observations</p>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-1 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
@@ -1063,7 +1190,7 @@ export default function Dashboard({ user, onLogout }) {
                 <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
                   <div className="text-slate-300 font-semibold flex items-center justify-between">
                     <span>Target Station:</span>
-                    <span className="text-cyan-400">{(typeof selectedStation !== "undefined" ? selectedStation : "Anand Vihar (ISBT)").name}</span>
+                    <span className="text-cyan-400">{selectedArea.name}</span>
                   </div>
                   <div>Morning Schedule: <strong className="text-slate-200">07:00 AM IST</strong></div>
                   <div>Payload: Composite AQI, Optimal Window, and HEPA Precautions.</div>
