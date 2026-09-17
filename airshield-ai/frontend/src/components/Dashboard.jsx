@@ -183,20 +183,23 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   const speakAdvisory = () => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
-    const cur = (i18n?.language || 'en').slice(0, 2);
-    const safeWindow = windows?.safeWindow || 'Daytime';
-    const dangerWindow = windows?.dangerWindow || 'Evening';
-    let msg = `AirShield Advisory. Recommended window is ${safeWindow}. Peak accumulation window is ${dangerWindow}.`;
-    if (cur === 'hi') {
-      msg = `एयरशील्ड अलर्ट। सुरक्षित समय ${safeWindow} है और खतरनाक समय ${dangerWindow} है।`;
-    } else if (cur === 'pa') {
-      msg = `ਏਅਰਸ਼ੀਲਡ ਅਲਰਟ। ਬਾਹਰ ਜਾਣ ਲਈ ਸਭ ਤੋਂ ਵਧੀਆ ਸਮਾਂ ${safeWindow} ਹੈ।`;
+    const cur = (i18n.language || 'en').slice(0, 2);
+    let msg = cur === 'pa' 
+      ? "ਸਾਵਧਾਨ। ਮੌਜੂਦਾ ਹਵਾ ਗੁਣਵੱਤਾ ਸੂਚਕ ਅੰਕ ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਹੈ। ਬਾਹਰ ਜਾਣ ਵੇਲੇ ਮਾਸਕ ਦੀ ਵਰਤੋਂ ਕਰੋ।"
+      : cur === 'hi'
+      ? "सावधान। वर्तमान वायु गुणवत्ता सूचकांक उच्च प्रदूषण श्रेणी में है। बाहर जाते समय मास्क का प्रयोग करें।"
+      : "Caution. Current air quality index is in high pollution range. Wear a mask outdoors.";
+    
+    const u = new SpeechSynthesisUtterance(msg);
+    u.lang = cur === 'pa' ? 'pa-IN' : cur === 'hi' ? 'hi-IN' : 'en-US';
+    const voices = window.speechSynthesis.getVoices();
+    if (cur === 'pa') {
+      const v = voices.find(x => x.lang.startsWith('pa')) || voices.find(x => x.lang.startsWith('hi'));
+      if (v) u.voice = v;
     }
-    const utter = new SpeechSynthesisUtterance(msg);
-    utter.lang = cur === 'hi' ? 'hi-IN' : cur === 'pa' ? 'pa-IN' : 'en-US';
-    window.speechSynthesis.speak(utter);
+    window.speechSynthesis.speak(u);
   };
 
   const { t, i18n } = useTranslation();
@@ -468,7 +471,7 @@ export default function Dashboard({ user, onLogout }) {
             className="text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border bg-sky-950/60 border-sky-600/50 text-sky-300 hover:bg-sky-900/60 cursor-pointer"
           >
             <span>🌐</span>
-            <span>{(i18n.language || '').startsWith('hi') ? 'ਪੰਜਾਬੀ' : (i18n.language || '').startsWith('pa') ? 'English' : 'हिन्दी'}</span>
+            <span>{(i18n.language || '').startsWith('en') ? 'हिन्दी' : (i18n.language || '').startsWith('hi') ? 'ਪੰਜਾਬੀ' : 'English'}</span>
           </button>
 
           {/* Voice Advisory */}
