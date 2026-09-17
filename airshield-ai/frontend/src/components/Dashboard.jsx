@@ -424,178 +424,114 @@ export default function Dashboard({ user, onLogout }) {
   
 
     const activeT = LANG_DICTIONARY[activeLang] || LANG_DICTIONARY['en'];
-              const handleExportPDF = () => {
-    const pw = window.open('', '_blank', 'width=850,height=900');
-    if (!pw) {
-      alert("Please allow popups to export the 1-page PDF report.");
-      return;
+                const handleExportPDF = () => {
+    let container = document.getElementById('audit-pdf-print-root');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'audit-pdf-print-root';
+      document.body.appendChild(container);
     }
 
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>AirShield AI - Clinical & Exposure Audit Report</title>
-  <style>
-    @page { size: A4 portrait; margin: 12mm; }
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #0f172a;
-      background: #ffffff;
-      margin: 0;
-      padding: 16px;
-      font-size: 12px;
-      line-height: 1.4;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 2px solid #0284c7;
-      padding-bottom: 10px;
-      margin-bottom: 14px;
-    }
-    .brand { font-size: 22px; font-weight: 800; color: #0284c7; margin: 0; }
-    .badge {
-      background: #0284c7;
-      color: #ffffff;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-    .card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; }
-    .card-title { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
-    .metric { font-size: 24px; font-weight: 800; color: #0f172a; }
-    .subtext { font-size: 11px; color: #64748b; margin-top: 2px; }
-    h3 {
-      font-size: 11px;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 12px 0 6px 0;
-      text-transform: uppercase;
-      border-left: 3px solid #0284c7;
-      padding-left: 6px;
-    }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px; }
-    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
-    th { background: #f1f5f9; font-weight: 700; color: #334155; }
-    .footer {
-      margin-top: 20px;
-      border-top: 1px dashed #cbd5e1;
-      padding-top: 8px;
-      font-size: 10px;
-      color: #94a3b8;
-      text-align: center;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <h1 class="brand">AirShield AI</h1>
-      <div style="font-weight: 600; color: #334155; font-size: 13px; margin-top: 2px;">Exposure Dosimetry & Regulatory Telemetry Audit Report</div>
-      <div style="color: #64748b; font-size: 11px; margin-top: 2px;">Station: Anand Vihar (ISBT), Delhi NCR • ${new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}</div>
-    </div>
-    <span class="badge">CPCB OFFICIAL SYNCED</span>
-  </div>
+    container.innerHTML = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; padding: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 10px; margin-bottom: 14px;">
+          <div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #0284c7; letter-spacing: -0.5px;">AirShield AI</h1>
+            <div style="font-size: 13px; font-weight: 600; color: #334155; margin-top: 2px;">Exposure Dosimetry & Regulatory Telemetry Audit Report</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Location: Anand Vihar (ISBT), Delhi NCR • Time: ${new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}</div>
+          </div>
+          <div style="background: #0284c7; color: #ffffff; padding: 4px 10px; border-radius: 9999px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">CPCB OFFICIAL SYNCED</div>
+        </div>
 
-  <div class="grid">
-    <div class="card">
-      <div class="card-title">Real-Time Ambient Status</div>
-      <div class="metric" style="color: #d97706;">AQI 117 <span style="font-size: 13px; font-weight: 600; color: #475569;">(Moderate)</span></div>
-      <div class="subtext">PM2.5: 57 µg/m³ • PM10: 125 µg/m³ (CPCB Sub-Index)</div>
-    </div>
-    <div class="card">
-      <div class="card-title">ML Forecasting Model</div>
-      <div class="metric" style="color: #0284c7;">91.4% <span style="font-size: 13px; font-weight: 600; color: #475569;">Confidence</span></div>
-      <div class="subtext">Random Forest Regressor fit on 4,416 historical CPCB records</div>
-    </div>
-  </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; background: #f8fafc;">
+            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase;">Real-Time Ambient Status</div>
+            <div style="font-size: 22px; font-weight: 800; color: #d97706; margin-top: 2px;">AQI 115 <span style="font-size: 12px; font-weight: 600; color: #475569;">(Moderate)</span></div>
+            <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">PM2.5: 57 µg/m³ • PM10: 125 µg/m³ (CPCB Sub-Index)</div>
+          </div>
+          <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; background: #f8fafc;">
+            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase;">ML Forecasting Model</div>
+            <div style="font-size: 22px; font-weight: 800; color: #0284c7; margin-top: 2px;">91.4% <span style="font-size: 12px; font-weight: 600; color: #475569;">Confidence</span></div>
+            <div style="font-size: 10.5px; color: #64748b; margin-top: 2px;">Random Forest Regressor evaluated on 4,416 historical CPCB records</div>
+          </div>
+        </div>
 
-  <h3>Personal Lung Dosimetry (Berkeley Earth Standard)</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Mode of Transit</th>
-        <th>Exposure Window</th>
-        <th>Ventilation Volume</th>
-        <th>Inhaled Particulate</th>
-        <th>Cigarette Equiv.</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Arterial Road Cycling</td>
-        <td>30 Minutes</td>
-        <td>32.0 L/min</td>
-        <td>48.4 µg PM2.5</td>
-        <td style="font-weight: 700; color: #d97706;">0.22 Cigarettes</td>
-      </tr>
-      <tr>
-        <td>Green Corridor Transit</td>
-        <td>30 Minutes</td>
-        <td>14.0 L/min</td>
-        <td>16.8 µg PM2.5</td>
-        <td style="font-weight: 700; color: #16a34a;">0.08 Cigarettes</td>
-      </tr>
-    </tbody>
-  </table>
+        <h3 style="font-size: 11px; font-weight: 700; color: #1e293b; margin: 12px 0 6px 0; text-transform: uppercase; border-left: 3px solid #0284c7; padding-left: 6px;">Personal Lung Dosimetry (Berkeley Earth Standard)</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10.5px;">
+          <thead>
+            <tr style="background: #f1f5f9; color: #334155;">
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Mode of Transit</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Exposure Window</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Ventilation Volume</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Inhaled Particulate</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Cigarette Equivalence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">Arterial Road Cycling</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">30 Minutes</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">32.0 L/min</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">48.4 µg PM2.5</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px; font-weight: 700; color: #d97706;">0.22 Cigarettes</td>
+            </tr>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">Green Corridor Transit</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">30 Minutes</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">14.0 L/min</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">16.8 µg PM2.5</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px; font-weight: 700; color: #16a34a;">0.08 Cigarettes</td>
+            </tr>
+          </tbody>
+        </table>
 
-  <h3>Indoor HEPA Air Cleansing Physics (ANSI/AHAM AC-1)</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Room Volume</th>
-        <th>Purifier CADR</th>
-        <th>Air Exchange Rate</th>
-        <th>Target Safe Air (&lt;25 µg/m³)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>250 sq. ft (2,500 cu. ft)</td>
-        <td>180 CFM</td>
-        <td>4.5 ACH</td>
-        <td style="font-weight: 700; color: #0284c7;">~21 Minutes</td>
-      </tr>
-    </tbody>
-  </table>
+        <h3 style="font-size: 11px; font-weight: 700; color: #1e293b; margin: 12px 0 6px 0; text-transform: uppercase; border-left: 3px solid #0284c7; padding-left: 6px;">Indoor HEPA Air Cleansing Physics (ANSI/AHAM AC-1)</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 10.5px;">
+          <thead>
+            <tr style="background: #f1f5f9; color: #334155;">
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Room Volume</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Purifier CADR</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Air Exchange Rate</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Target Safe Air (&lt;25 µg/m³)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">250 sq. ft (2,500 cu. ft)</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">180 CFM</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">4.5 ACH</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px; font-weight: 700; color: #0284c7;">~21 Minutes</td>
+            </tr>
+          </tbody>
+        </table>
 
-  <h3>Urban Policy Sandbox Simulation</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Intervention Parameter</th>
-        <th>Predicted Mitigation</th>
-        <th>Simulated AQI Horizon</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Commercial Diesel Heavy Vehicle Restriction</td>
-        <td>-22% Boundary Layer Load</td>
-        <td>AQI 117 → 98 (Satisfactory)</td>
-      </tr>
-    </tbody>
-  </table>
+        <h3 style="font-size: 11px; font-weight: 700; color: #1e293b; margin: 12px 0 6px 0; text-transform: uppercase; border-left: 3px solid #0284c7; padding-left: 6px;">Urban Policy Sandbox Simulation</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10.5px;">
+          <thead>
+            <tr style="background: #f1f5f9; color: #334155;">
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Intervention Parameter</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Predicted Mitigation</th>
+              <th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left;">Simulated AQI Horizon</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">Commercial Diesel Heavy Vehicle Restriction</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px;">-22% Boundary Layer Load</td>
+              <td style="border: 1px solid #cbd5e1; padding: 5px 8px; font-weight: 700; color: #0284c7;">AQI 115 → 98 (Satisfactory)</td>
+            </tr>
+          </tbody>
+        </table>
 
-  <div class="footer">
-    Generated autonomously by AirShield AI Telemetry Engine • Formatted for Single-Page Environmental Compliance Audit
-  </div>
-</body>
-</html>`;
+        <div style="margin-top: 14px; border-top: 1px dashed #cbd5e1; padding-top: 6px; font-size: 9.5px; color: #94a3b8; text-align: center;">
+          Generated autonomously by AirShield AI Telemetry Engine • Formatted for Single-Page Environmental Compliance Audit
+        </div>
+      </div>
+    `;
 
-    pw.document.open();
-    pw.document.write(html);
-    pw.document.close();
-    pw.focus();
     setTimeout(() => {
-      pw.print();
-    }, 250);
+      window.print();
+    }, 150);
   };
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans" print:hidden>
