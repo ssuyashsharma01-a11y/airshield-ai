@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   ShieldCheck, Activity, Clock, Sun, Flame, 
-  Sparkles, HeartPulse, RefreshCw, Bike, Footprints, Apple, LogOut,
+  Sparkles, HeartPulse, RefreshCw, Send, MessageSquare, Volume2, Bike, Footprints, Apple, LogOut,
   Wind, Droplets, Thermometer, CheckCircle2, AlertTriangle,
   GitBranch, Database, MapPin, Navigation
 } from 'lucide-react';
@@ -326,6 +326,38 @@ export default function Dashboard({ user, onLogout }) {
             {isLive ? 'Live Sync' : 'Mock Active'}
           </button>
 
+          
+          {/* Language Toggle */}
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border bg-sky-950/60 border-sky-600/50 text-sky-300 hover:bg-sky-900/60 cursor-pointer"
+          >
+            <span>🌐</span>
+            <span>{(i18n.language || '').startsWith('hi') ? 'ਪੰਜਾਬੀ' : (i18n.language || '').startsWith('pa') ? 'English' : 'हिन्दी'}</span>
+          </button>
+
+          {/* Voice Advisory */}
+          <button
+            type="button"
+            onClick={speakAdvisory}
+            title="Listen Voice Advisory"
+            className="p-2 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-xl text-cyan-400 cursor-pointer transition-all hover:scale-105"
+          >
+            <Volume2 className="w-4 h-4" />
+          </button>
+
+          {/* WhatsApp Alert Button */}
+          <button
+            type="button"
+            onClick={() => setShowWaModal(true)}
+            title="Get Daily WhatsApp Advisory"
+            className="text-xs px-3 py-1.5 rounded-xl font-medium transition flex items-center gap-1.5 border bg-emerald-950/60 border-emerald-600/50 text-emerald-300 hover:bg-emerald-900/60 cursor-pointer"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>WhatsApp Alert</span>
+          </button>
+
           <button onClick={fetchLiveTelemetry} className="p-2 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -623,6 +655,74 @@ export default function Dashboard({ user, onLogout }) {
           </div>
         </div>
       </main>
+    
+      {/* WhatsApp Daily Alert Modal */}
+      {showWaModal && (
+        <div className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 relative shadow-2xl">
+            <button
+              type="button"
+              onClick={() => { setShowWaModal(false); setWaSubscribed(false); }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Daily WhatsApp Advisory</h3>
+                <p className="text-xs text-slate-400">Automated 7:00 AM particulate vulnerability broadcast</p>
+              </div>
+            </div>
+
+            {waSubscribed ? (
+              <div className="bg-emerald-950/50 border border-emerald-500/50 rounded-xl p-4 text-center space-y-2">
+                <div className="text-emerald-400 font-bold text-sm">✓ Alert Broadcast Hook Active!</div>
+                <p className="text-xs text-slate-300">Opening WhatsApp with your schedule...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSendWaAlert} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Mobile Number (India)</label>
+                  <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 focus-within:border-emerald-500/60 transition">
+                    <span className="text-xs text-slate-400 font-mono">+91</span>
+                    <input
+                      type="tel"
+                      maxLength={10}
+                      value={waPhone}
+                      onChange={(e) => setWaPhone(e.target.value.replace(/\D/g, ''))}
+                      placeholder="9876543210"
+                      className="bg-transparent text-xs text-white outline-none w-full font-mono"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1.5">
+                  <div className="text-slate-300 font-semibold flex items-center justify-between">
+                    <span>Target Station:</span>
+                    <span className="text-cyan-400">{selectedArea.name}</span>
+                  </div>
+                  <div>Morning Schedule: <strong className="text-slate-200">07:00 AM IST</strong></div>
+                  <div>Payload: Composite AQI, Optimal Window, and HEPA Precautions.</div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Schedule Morning Advisory</span>
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
