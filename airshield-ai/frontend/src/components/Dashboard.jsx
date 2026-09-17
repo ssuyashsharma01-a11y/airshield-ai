@@ -90,6 +90,24 @@ function getAqiCategory(aqi) {
 }
 
 export default function Dashboard({ user, onLogout }) {
+
+  const speakAdvisory = () => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const cur = (i18n?.language || 'en').slice(0, 2);
+    const safeWindow = windows?.safeWindow || 'Daytime';
+    const dangerWindow = windows?.dangerWindow || 'Evening';
+    let msg = `AirShield Advisory. Recommended window is ${safeWindow}. Peak accumulation window is ${dangerWindow}.`;
+    if (cur === 'hi') {
+      msg = `एयरशील्ड अलर्ट। सुरक्षित समय ${safeWindow} है और खतरनाक समय ${dangerWindow} है।`;
+    } else if (cur === 'pa') {
+      msg = `ਏਅਰਸ਼ੀਲਡ ਅਲਰਟ। ਬਾਹਰ ਜਾਣ ਲਈ ਸਭ ਤੋਂ ਵਧੀਆ ਸਮਾਂ ${safeWindow} ਹੈ।`;
+    }
+    const utter = new SpeechSynthesisUtterance(msg);
+    utter.lang = cur === 'hi' ? 'hi-IN' : cur === 'pa' ? 'pa-IN' : 'en-US';
+    window.speechSynthesis.speak(utter);
+  };
+
   const { t, i18n } = useTranslation();
   const toggleLang = () => i18n.changeLanguage(i18n.language && i18n.language.startsWith('hi') ? 'en' : 'hi');
 
