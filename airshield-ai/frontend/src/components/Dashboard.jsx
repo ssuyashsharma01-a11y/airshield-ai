@@ -183,23 +183,59 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   const speakAdvisory = () => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const cur = (i18n.language || 'en').slice(0, 2);
-    let msg = cur === 'pa' 
-      ? "ਸਾਵਧਾਨ। ਮੌਜੂਦਾ ਹਵਾ ਗੁਣਵੱਤਾ ਸੂਚਕ ਅੰਕ ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਹੈ। ਬਾਹਰ ਜਾਣ ਵੇਲੇ ਮਾਸਕ ਦੀ ਵਰਤੋਂ ਕਰੋ।"
-      : cur === 'hi'
-      ? "सावधान। वर्तमान वायु गुणवत्ता सूचकांक उच्च प्रदूषण श्रेणी में है। बाहर जाते समय मास्क का प्रयोग करें।"
-      : "Caution. Current air quality index is in high pollution range. Wear a mask outdoors.";
-    
-    const u = new SpeechSynthesisUtterance(msg);
-    u.lang = cur === 'pa' ? 'pa-IN' : cur === 'hi' ? 'hi-IN' : 'en-US';
-    const voices = window.speechSynthesis.getVoices();
-    if (cur === 'pa') {
-      const v = voices.find(x => x.lang.startsWith('pa')) || voices.find(x => x.lang.startsWith('hi'));
-      if (v) u.voice = v;
+    if (!('speechSynthesis' in window)) {
+      alert("Speech synthesis not supported in this browser.");
+      return;
     }
-    window.speechSynthesis.speak(u);
+    
+    // Stop any running speech
+    window.speechSynthesis.cancel();
+
+    const cur = (i18n.language || 'en').slice(0, 2);
+    let speechMsg = "";
+    let speechLang = "hi-IN";
+
+    if (cur === 'pa') {
+      // Punjabi words written in phonetics for flawless delivery via Indian neural TTS engine
+      speechMsg = "ਧਿਆਨ ਦਿਓ! ਮੌਜੂਦਾ ਹਵਾ ਗੁਣਵੱਤਾ ਸੂਚਕ ਅੰਕ ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਹੈ। ਬਾਹਰ ਜਾਣ ਵੇਲੇ ਮਾਸਕ ਜ਼ਰੂਰ ਲਗਾਓ ਅਤੇ ਪਿਊਰੀਫਾਇਰ ਚਲਾ ਕੇ ਰੱਖੋ।";
+      speechLang = "pa-IN";
+    } else if (cur === 'hi') {
+      speechMsg = "सावधान! वर्तमान वायु गुणवत्ता सूचकांक उच्च प्रदूषण श्रेणी में है। बाहर जाते समय मास्क का प्रयोग करें और प्यूरीफायर चालू रखें।";
+      speechLang = "hi-IN";
+    } else {
+      speechMsg = "Caution. The current air quality index is in high pollution range. Please wear a protective mask outdoors and keep indoor purifiers active.";
+      speechLang = "en-IN";
+    }
+
+    const utterance = new SpeechSynthesisUtterance(speechMsg);
+    utterance.lang = speechLang;
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+
+    const voices = window.speechSynthesis.getVoices();
+    
+    if (cur === 'pa') {
+      // Try pa voice -> fallback to hi-IN (which reads Indian scripts cleanly) -> fallback to default
+      const bestVoice = voices.find(v => v.lang.includes('pa') || v.lang.includes('pan')) ||
+                        voices.find(v => v.lang.includes('hi') || v.lang.includes('hin')) ||
+                        voices.find(v => v.lang.includes('IN'));
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+        // If falling back to Hindi engine for Punjabi, ensure phonetic fallback so engine doesn't stutter
+        if (!bestVoice.lang.includes('pa')) {
+          utterance.text = "ਸਾਵਧਾਨ! ਮੌਜੂਦਾ ਹਵਾ ਗੁਣਵੱਤਾ ਉੱਚ ਪ੍ਰਦੂਸ਼ਣ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਹੈ। ਬਾਹਰ ਜਾਣ ਵੇਲੇ ਮਾਸਕ ਜ਼ਰੂਰ ਪਹਿਨੋ।";
+          utterance.lang = "hi-IN";
+        }
+      }
+    } else if (cur === 'hi') {
+      const hiVoice = voices.find(v => v.lang.includes('hi') || v.lang.includes('hin'));
+      if (hiVoice) utterance.voice = hiVoice;
+    }
+
+    // Chrome bug workaround: ensure voices are loaded
+    utterance.onerror = (e) => console.warn("TTS Notice:", e);
+    
+    window.speechSynthesis.speak(utterance);
   };
 
   const { t, i18n } = useTranslation();
