@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { 
   ShieldCheck, Activity, Clock, Sun, Flame, 
-  Sparkles, HeartPulse, RefreshCw, X, FileText, Send, MessageSquare, Volume2, Bike, Footprints, Apple, LogOut,
+  Sparkles, HeartPulse, RefreshCw, Sliders, X, FileText, Send, MessageSquare, Volume2, Bike, Footprints, Apple, LogOut,
   Wind, Droplets, Thermometer, CheckCircle2, AlertTriangle,
   GitBranch, Database, MapPin, Navigation
 } from 'lucide-react';
@@ -93,6 +93,16 @@ export default function Dashboard({ user, onLogout }) {
 
   
   // WhatsApp State Hooks & Handler
+  
+  // What-If Policy Intervention State
+  const [policyEvBan, setPolicyEvBan] = useState(false);
+  const [policyMisting, setPolicyMisting] = useState(false);
+  const [policyConstruction, setPolicyConstruction] = useState(false);
+
+  const netInterventionReduction = (policyEvBan ? 22 : 0) + (policyMisting ? 14 : 0) + (policyConstruction ? 16 : 0);
+  const baselineAqi = Number(liveModelAqi) || 117;
+  const simulatedAqi = Math.max(25, Math.round(baselineAqi * (1 - (netInterventionReduction / 100))));
+
   const [showWaModal, setShowWaModal] = useState(false);
   const [waPhone, setWaPhone] = useState("");
   const [waSubscribed, setWaSubscribed] = useState(false);
@@ -741,6 +751,111 @@ export default function Dashboard({ user, onLogout }) {
             <span className="text-slate-400">Total Inhaled Mass:</span>
             <span className="font-mono font-bold text-amber-300">{inhaledMassUg} µg PM2.5</span>
           </div>
+        </div>
+      </div>
+
+      
+      {/* WHAT-IF POLICY INTERVENTION SIMULATOR */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl my-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+              <Sliders className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                Urban Policy & Intervention Simulator
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-700/50">Predictive Sandbox</span>
+              </h3>
+              <p className="text-[11px] text-slate-400">Simulate real-time municipal mitigation actions against current air stagnation</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+            <div className="text-right">
+              <div className="text-xs text-slate-400">Simulated AQI</div>
+              <div className="text-lg font-black font-mono text-cyan-400">{simulatedAqi}</div>
+            </div>
+            {netInterventionReduction > 0 && (
+              <span className="text-xs font-bold font-mono px-2 py-1 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                -{netInterventionReduction}% Drop
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          {/* Toggle 1 */}
+          <button
+            type="button"
+            onClick={() => setPolicyEvBan(!policyEvBan)}
+            className={`p-3.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+              policyEvBan
+                ? 'bg-indigo-950/40 border-indigo-500 text-indigo-200'
+                : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-white">Commercial Diesel Restrict</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${policyEvBan ? 'bg-indigo-500/30 text-indigo-300' : 'bg-slate-800 text-slate-400'}`}>
+                -22% Load
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400">Restrict heavy commercial diesel fleets during peak inversion hours.</p>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold">
+              <span className={policyEvBan ? 'text-indigo-400' : 'text-slate-500'}>
+                {policyEvBan ? '✓ Active in Simulation' : '+ Click to Simulate'}
+              </span>
+            </div>
+          </button>
+
+          {/* Toggle 2 */}
+          <button
+            type="button"
+            onClick={() => setPolicyMisting(!policyMisting)}
+            className={`p-3.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+              policyMisting
+                ? 'bg-cyan-950/40 border-cyan-500 text-cyan-200'
+                : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-white">Anti-Smog Mist Cannons</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${policyMisting ? 'bg-cyan-500/30 text-cyan-300' : 'bg-slate-800 text-slate-400'}`}>
+                -14% PM2.5
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400">Deploy high-pressure boundary misting at arterial transit choke points.</p>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold">
+              <span className={policyMisting ? 'text-cyan-400' : 'text-slate-500'}>
+                {policyMisting ? '✓ Active in Simulation' : '+ Click to Simulate'}
+              </span>
+            </div>
+          </button>
+
+          {/* Toggle 3 */}
+          <button
+            type="button"
+            onClick={() => setPolicyConstruction(!policyConstruction)}
+            className={`p-3.5 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
+              policyConstruction
+                ? 'bg-emerald-950/40 border-emerald-500 text-emerald-200'
+                : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-white">Construction Pause</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${policyConstruction ? 'bg-emerald-500/30 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                -16% Coarse Dust
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400">Mandatory enclosure and halt of civil earthmoving and dry grinding.</p>
+            <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold">
+              <span className={policyConstruction ? 'text-emerald-400' : 'text-slate-500'}>
+                {policyConstruction ? '✓ Active in Simulation' : '+ Click to Simulate'}
+              </span>
+            </div>
+          </button>
         </div>
       </div>
 
