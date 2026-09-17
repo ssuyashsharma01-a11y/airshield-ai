@@ -153,6 +153,9 @@ export default function Dashboard({ user, onLogout }) {
   const [roomAreaSqFt, setRoomAreaSqFt] = useState(250);
   const [purifierCadrCfm, setPurifierCadrCfm] = useState(180);
 
+    const [commuteMinutes, setCommuteMinutes] = useState(30);
+  const [commuteActivity, setCommuteActivity] = useState('cycling');
+  const [routeType, setRouteType] = useState('green');
   const [policyEvBan, setPolicyEvBan] = useState(false);
   const [policyMisting, setPolicyMisting] = useState(false);
   const [policyConstruction, setPolicyConstruction] = useState(false);
@@ -244,6 +247,11 @@ export default function Dashboard({ user, onLogout }) {
 
     const activeT = LANG_DICTIONARY[activeLang] || LANG_DICTIONARY['en'];
     const safeAreaName = (typeof selectedStation !== 'undefined' ? selectedStation : 'Anand Vihar (ISBT)');
+    // Commute State Fallbacks
+  const currentRouteType = typeof routeType !== 'undefined' ? routeType : 'green';
+  const currentCommuteMinutes = typeof commuteMinutes !== 'undefined' ? commuteMinutes : 30;
+  const currentCommuteActivity = typeof commuteActivity !== 'undefined' ? commuteActivity : 'cycling';
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4 mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 backdrop-blur-md">
