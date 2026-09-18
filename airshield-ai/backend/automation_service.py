@@ -1,8 +1,6 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import os
 import requests
-import asyncio
 from datetime import datetime
 
 router = APIRouter(prefix="/api/automation", tags=["SmartHome"])
@@ -12,7 +10,6 @@ class WebhookConfigRequest(BaseModel):
     target_entity: str = "switch.bedroom_hepa_purifier"
     lead_time_minutes: int = 45
     aqi_threshold: int = 100
-    auto_pilot_enabled: bool = True
 
 class TriggerPayload(BaseModel):
     webhook_url: str = ""
@@ -20,26 +17,35 @@ class TriggerPayload(BaseModel):
     forecast_peak_hour: str = "06:00 AM"
     estimated_aqi: int = 137
 
-# State store
 state = {
-    "auto_pilot_enabled": False,
-    "last_triggered": None,
-    "last_event_log": "Awaiting schedule initialization",
+    "auto_pilot_enabled": True,
     "target_entity": "switch.bedroom_hepa_purifier",
     "webhook_url": "",
     "lead_time_minutes": 45,
-    "aqi_threshold": 100
+    "aqi_threshold": 100,
+    "last_triggered": None,
+    "last_event_log": "Armed for 05:15 AM pre-cleansing"
 }
 
-@router.get("/status")
-def get_automation_status():
+@router.get("/config")
+def get_config():
     return {
         "status": "success",
-        "auto_pilot_enabled": state["auto_pilot_enabled"],
-        "last_triggered": state["last_triggered"],
-        "last_event_log": state["last_event_log"],
-        "target_entity": state["target_entity"]
+        "config": {
+            "webhook_url": state["webhook_url"],
+            "target_entity": state["target_entity"],
+            "lead_time_minutes": state["lead_time_minutes"],
+            "aqi_threshold": state["aqi_threshold"]
+        }
     }
+
+@router.post("/config")
+def save_config(config: WebhookConfigRequest):
+    state["webhook_url"] = config.webhook_url.strip()
+    state["target_entity"] = config.target_entity.strip() or "switch.bedroom_hepa_purifier"
+    state["lead_time_minutes"] = config.lead_time_minutes
+    state["aqi_threshold"] = config.aqi_threshold
+    return {"status": "saved", "config": config.dict()}
 
 @router.post("/toggle-autopilot")
 def toggle_autopilot(data: dict):
@@ -50,17 +56,16 @@ def toggle_autopilot(data: dict):
         state["last_event_log"] = f"Auto-Pilot Active: Armed for 05:15 AM pre-cleansing before 6 AM peak."
     else:
         state["last_event_log"] = f"Auto-Pilot Disarmed manually at {timestamp}."
-    return {
-        "status": "success",
-        "auto_pilot_enabled": state["auto_pilot_enabled"],
-        "log": state["last_event_log"]
-    }
+    return {"status": "success", "auto_pilot_enabled": state["auto_pilot_enabled"], "log": state["last_event_log"]}
 
 @router.post("/test-trigger")
 def trigger_purifier_webhook(payload: TriggerPayload):
+    url = payload.webhook_url.strip() or state["webhook_url"]
+    entity = payload.target_entity.strip() or state["target_entity"]
+    
     event_data = {
         "event": "airshield_preemptive_cleansing",
-        "entity_id": payload.target_entity or state["target_entity"],
+        "entity_id": entity,
         "action": "turn_on",
         "reason": f"Predicted Stagnation Peak at {payload.forecast_peak_hour}",
         "forecast_aqi": payload.estimated_aqi,
@@ -68,21 +73,20 @@ def trigger_purifier_webhook(payload: TriggerPayload):
     }
 
     state["last_triggered"] = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
-    state["last_event_log"] = f"Pre-activation dispatched for {payload.target_entity}."
 
-    if payload.webhook_url and payload.webhook_url.startswith("http"):
+    if url and url.startswith("http"):
         try:
-            res = requests.post(payload.webhook_url, json=event_data, timeout=5)
+            res = requests.post(url, json=event_data, timeout=5)
             return {
                 "status": "dispatched",
                 "http_code": res.status_code,
-                "message": f"Signal dispatched to {payload.target_entity}"
+                "message": f"Signal live dispatched to {entity} via {url}"
             }
         except Exception as e:
-            return {"status": "error", "detail": str(e)}
+            return {"status": "error", "detail": f"Failed to dispatch to {url}: {str(e)}"}
 
     return {
         "status": "simulated_success",
-        "detail": "Dry-run mode: Webhook payload validated successfully.",
+        "detail": "Dry-run mode (no URL configured): Webhook payload generated.",
         "payload": event_data
     }
