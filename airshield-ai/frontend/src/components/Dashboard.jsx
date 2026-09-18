@@ -1251,7 +1251,7 @@ export default function Dashboard({ user, onLogout }) {
 
     
       
-      <div className="print:block text-slate-900 bg-white p-6 font-sans">
+      <div className="hidden print:block print:block text-slate-900 bg-white p-6 font-sans">
         <div className="hidden print:block flex justify-between items-start border-b-2 border-sky-600 pb-3 mb-4">
           <div>
             <h1 className="text-xl font-extrabold text-sky-700 m-0 leading-tight">AirShield AI</h1>
