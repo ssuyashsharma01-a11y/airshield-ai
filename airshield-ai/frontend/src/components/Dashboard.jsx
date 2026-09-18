@@ -739,7 +739,7 @@ export default function Dashboard({ user, onLogout }) {
         {/* Module 1: Clean Air Routing */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div className="flex items-center gap-2.5">
+            <div className="hidden flex items-center gap-2.5">
               
         
     
