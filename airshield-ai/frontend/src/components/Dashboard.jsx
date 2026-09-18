@@ -698,6 +698,11 @@ export default function Dashboard({ user, onLogout }) {
               </li>
             </ul>
           </div>
+        
+          {/* LIVE CLEAN-AIR MAP ROUTER IN LEFT COLUMN EMPTY SPACE */}
+          <div className="mt-4">
+            <CleanAirMapRouter />
+          </div>
         </div>
 
         <div className="lg:col-span-8 space-y-6">
@@ -739,11 +744,10 @@ export default function Dashboard({ user, onLogout }) {
         {/* Module 1: Clean Air Routing */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div className="hidden flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5">
               
         
     
-<CleanAirMapRouter />
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   Clean-Air Commute Router
@@ -1247,7 +1251,7 @@ export default function Dashboard({ user, onLogout }) {
 
     
       
-      <div className="hidden print:block text-slate-900 bg-white p-6 font-sans">
+      <div className="print:block text-slate-900 bg-white p-6 font-sans">
         <div className="flex justify-between items-start border-b-2 border-sky-600 pb-3 mb-4">
           <div>
             <h1 className="text-xl font-extrabold text-sky-700 m-0 leading-tight">AirShield AI</h1>
