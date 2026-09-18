@@ -1,1 +1,25 @@
 @import "tailwindcss";
+/* Strict Screen/Print isolation for PDF Audit Report */
+@media screen {
+  .audit-report-sheet,
+  [data-pdf-report="true"],
+  div:has(> div > h2:contains("AirShield AI")),
+  div:has(> p:contains("Exposure Dosimetry & Regulatory Telemetry Audit Report")) {
+    display: none !important;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .audit-report-sheet,
+  [data-pdf-report="true"] {
+    visibility: visible !important;
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}
