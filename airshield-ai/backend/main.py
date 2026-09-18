@@ -1,3 +1,4 @@
+from alert_service import router as alert_router
 ﻿from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
@@ -7,6 +8,8 @@ import numpy as np
 from datetime import datetime, timedelta
 
 app = FastAPI(title="AirShield ML Inference Engine")
+
+app.include_router(alert_router)
 
 app.add_middleware(
     CORSMiddleware,

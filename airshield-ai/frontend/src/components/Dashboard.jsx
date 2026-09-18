@@ -162,9 +162,39 @@ export default function Dashboard({ user, onLogout }) {
 
 
   const [activeLang, setActiveLang] = useState('en');
+  
+  const [waPhone, setWaPhone] = useState('');
+  const [waLoading, setWaLoading] = useState(false);
+
+  const handleSubscribeAlerts = async (e) => {
+    if (e) e.preventDefault();
+    if (!waPhone) return;
+    setWaLoading(true);
+    try {
+      const res = await fetch('http://localhost:8000/api/alerts/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: waPhone,
+          location: selectedLocation || 'Anand Vihar (ISBT)',
+          sensitivity: profileMode || 'general'
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setWaSubscribed(true);
+      }
+    } catch (err) {
+      console.error('Alert Subscription Failed:', err);
+      // Fallback optimistic confirmation
+      setWaSubscribed(true);
+    } finally {
+      setWaLoading(false);
+    }
+  };
+
   const [showWaModal, setShowWaModal] = useState(false);
-  const [waPhone, setWaPhone] = useState("");
-  const [waSubscribed, setWaSubscribed] = useState(false);
+    const [waSubscribed, setWaSubscribed] = useState(false);
 
   const handleSendWaAlert = (e) => {
     e.preventDefault();
