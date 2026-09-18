@@ -1,3 +1,4 @@
+import CleanAirMapRouter from './CleanAirMapRouter';
 ﻿import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -742,9 +743,7 @@ export default function Dashboard({ user, onLogout }) {
               
         
     
-<div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-                <Navigation className="w-5 h-5" />
-              </div>
+<CleanAirMapRouter />
               <div>
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   Clean-Air Commute Router
