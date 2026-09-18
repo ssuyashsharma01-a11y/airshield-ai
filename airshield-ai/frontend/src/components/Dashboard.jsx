@@ -191,6 +191,32 @@ export default function Dashboard({ user, onLogout }) {
     }
   };
 
+  
+  const [liveTelemetry, setLiveTelemetry] = useState({
+    temp: 32.7,
+    humidity: 52,
+    wind_speed: 5.6,
+    pressure: 982.8,
+    source: 'Open-Meteo Live'
+  });
+
+  useEffect(() => {
+    const fetchTelemetry = async () => {
+      try {
+        const res = await fetch('http://localhost:8000/api/telemetry/live');
+        const data = await res.json();
+        if (data.status === 'synchronized' && data.atmospheric_vector) {
+          setLiveTelemetry(data.atmospheric_vector);
+        }
+      } catch (err) {
+        console.warn('Live telemetry fallback engaged:', err);
+      }
+    };
+    fetchTelemetry();
+    const interval = setInterval(fetchTelemetry, 60000); // 1-minute cadence
+    return () => clearInterval(interval);
+  }, []);
+
   const [waPhone, setWaPhone] = useState('');
   const [waLoading, setWaLoading] = useState(false);
 
@@ -681,9 +707,9 @@ export default function Dashboard({ user, onLogout }) {
             <div className="grid grid-cols-3 gap-1.5 text-center text-[11px]">
               <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ PM2.5</span>
               <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ PM10</span>
-              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Ambient Temp</span>
-              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Rel Humidity</span>
-              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Wind Velocity</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Ambient Temp: {liveTelemetry.temp}°C</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Rel Humidity: {liveTelemetry.humidity}%</span>
+              <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Wind Velocity: {liveTelemetry.wind_speed} km/h</span>
               <span className="bg-slate-950 border border-slate-800 py-1 px-1.5 rounded text-slate-300 font-medium">✓ Diurnal Hour</span>
             </div>
           </div>

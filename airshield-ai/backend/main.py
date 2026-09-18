@@ -1,3 +1,5 @@
+from telemetry_service import router as telemetry_router
+from telemetry_service import fetch_live_meteorology
 from automation_service import router as automation_router
 from alert_service import router as alert_router
 from fastapi import FastAPI, HTTPException
@@ -12,6 +14,7 @@ app = FastAPI(title="AirShield ML Inference Engine")
 
 app.include_router(alert_router)
 app.include_router(automation_router)
+app.include_router(telemetry_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -144,3 +147,6 @@ def predict_aqi(lat: float = 28.6469, lon: float = 77.3160, current_pm: float = 
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
