@@ -164,6 +164,30 @@ export default function Dashboard({ user, onLogout }) {
   const [activeLang, setActiveLang] = useState('en');
   
   
+  
+  const [autoPilot, setAutoPilot] = useState(false);
+  const [autoPilotLog, setAutoPilotLog] = useState('');
+
+  const toggleAutoPilotMode = async () => {
+    const nextState = !autoPilot;
+    setAutoPilot(nextState);
+    try {
+      const res = await fetch('http://localhost:8000/api/automation/toggle-autopilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: nextState })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setAutoPilotLog(data.log);
+        setTimeout(() => setAutoPilotLog(''), 4500);
+      }
+    } catch (e) {
+      setAutoPilotLog(nextState ? 'Auto-Pilot Armed (Local Sync)' : 'Auto-Pilot Disarmed');
+      setTimeout(() => setAutoPilotLog(''), 4500);
+    }
+  };
+
   const [webhookStatus, setWebhookStatus] = useState(null);
   const [triggeringWebhook, setTriggeringWebhook] = useState(false);
 
@@ -1053,18 +1077,49 @@ export default function Dashboard({ user, onLogout }) {
                 </div>
               </div>
             
-            <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
-              <div className="text-xs text-slate-400">
-                <span className="text-emerald-400 font-semibold">Matter / Home Assistant:</span> Pre-activates HEPA 45m before 6 AM peak
+            <div className="mt-4 pt-3 border-t border-slate-800 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-white flex items-center gap-2">
+                    <span>Autonomous Pilot (6 AM Pre-Cleanse)</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${autoPilot ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
+                      {autoPilot ? 'Armed' : 'Standby'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Dispatches 05:15 AM pre-activation webhook before predicted accumulation peak</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Toggle Switch */}
+                  <button
+                    type="button"
+                    onClick={toggleAutoPilotMode}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${autoPilot ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                    role="switch"
+                    aria-checked={autoPilot}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoPilot ? 'translate-x-5' : 'translate-x-0'}`}
+                    />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleTriggerPreemptivePurifier}
+                    disabled={triggeringWebhook}
+                    className="px-2.5 py-1 bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-semibold cursor-pointer transition"
+                  >
+                    {triggeringWebhook ? '...' : 'Test'}
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={handleTriggerPreemptivePurifier}
-                disabled={triggeringWebhook}
-                className="px-3 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-semibold cursor-pointer transition flex items-center gap-1.5"
-              >
-                {triggeringWebhook ? 'Dispatching...' : 'Simulate Pre-Activation'}
-              </button>
+
+              {autoPilotLog && (
+                <div className="text-[11px] text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 rounded-lg px-2.5 py-1.5 text-center transition">
+                  {autoPilotLog}
+                </div>
+              )}
             </div>
             {webhookStatus && (
               <div className="mt-2 text-xs text-emerald-400 font-medium bg-emerald-950/40 border border-emerald-500/30 rounded-lg p-2 text-center">
