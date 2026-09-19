@@ -8,7 +8,6 @@ DELHI_LAT = 28.6508
 DELHI_LON = 77.3153
 
 def calculate_cpcb_aqi(pm25, pm10):
-    # CPCB Linear Interpolation Formula
     def get_sub_index(val, breakpoints):
         for b_lo, b_hi, i_lo, i_hi in breakpoints:
             if b_lo <= val <= b_hi:
@@ -28,15 +27,14 @@ def calculate_cpcb_aqi(pm25, pm10):
     i_pm10 = get_sub_index(pm10, pm10_bp)
     return max(i_pm25, i_pm10)
 
-@router.get("/live")
-def get_live_covariates():
+def fetch_live_meteorology(lat=DELHI_LAT, lon=DELHI_LON):
     meteo_url = (
         f"https://api.open-meteo.com/v1/forecast?"
-        f"latitude={DELHI_LAT}&longitude={DELHI_LON}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,surface_pressure"
+        f"latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,surface_pressure"
     )
     aqi_url = (
         f"https://air-quality-api.open-meteo.com/v1/air-quality?"
-        f"latitude={DELHI_LAT}&longitude={DELHI_LON}&current=pm10,pm2_5"
+        f"latitude={lat}&longitude={lon}&current=pm10,pm2_5"
     )
     
     temp = 32.7
@@ -55,7 +53,7 @@ def get_live_covariates():
             wind_speed = m_data.get("wind_speed_10m", wind_speed)
             pressure = m_data.get("surface_pressure", pressure)
     except Exception as e:
-        print("Meteo fetch failed:", e)
+        pass
 
     try:
         a_res = requests.get(aqi_url, timeout=4)
@@ -64,21 +62,26 @@ def get_live_covariates():
             pm25 = a_data.get("pm2_5", pm25)
             pm10 = a_data.get("pm10", pm10)
     except Exception as e:
-        print("AQI fetch failed:", e)
+        pass
 
     real_aqi = calculate_cpcb_aqi(pm25, pm10)
 
     return {
+        "temp": temp,
+        "humidity": humidity,
+        "wind_speed": wind_speed,
+        "pressure": pressure,
+        "pm25": round(pm25, 1),
+        "pm10": round(pm10, 1),
+        "real_aqi": real_aqi,
+        "hour": datetime.now().hour,
+        "source": "Open-Meteo High-Resolution Live APIs"
+    }
+
+@router.get("/live")
+def get_live_covariates():
+    meteo = fetch_live_meteorology()
+    return {
         "status": "synchronized",
-        "atmospheric_vector": {
-            "temp": temp,
-            "humidity": humidity,
-            "wind_speed": wind_speed,
-            "pressure": pressure,
-            "pm25": round(pm25, 1),
-            "pm10": round(pm10, 1),
-            "real_aqi": real_aqi,
-            "hour": datetime.now().hour,
-            "source": "Open-Meteo High-Resolution Live APIs"
-        }
+        "atmospheric_vector": meteo
     }

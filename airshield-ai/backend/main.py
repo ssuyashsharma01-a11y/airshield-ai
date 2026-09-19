@@ -1,5 +1,4 @@
 from telemetry_service import router as telemetry_router
-from telemetry_service import fetch_live_meteorology
 from automation_service import router as automation_router
 from alert_service import router as alert_router
 from fastapi import FastAPI, HTTPException
