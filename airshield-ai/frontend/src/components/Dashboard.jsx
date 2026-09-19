@@ -261,6 +261,11 @@ export default function Dashboard({ user, onLogout }) {
         const data = await res.json();
         if (data.status === 'synchronized' && data.atmospheric_vector) {
           setLiveTelemetry(data.atmospheric_vector);
+          if (data.atmospheric_vector.real_aqi) {
+            setCurrentAqi(data.atmospheric_vector.real_aqi);
+            setPm25(data.atmospheric_vector.pm25);
+            setPm10(data.atmospheric_vector.pm10);
+          }
         }
       } catch (err) {
         console.warn('Live telemetry fallback engaged:', err);
