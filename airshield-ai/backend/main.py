@@ -1,3 +1,4 @@
+from telemetry_service import router as telemetry_router, fetch_live_meteorology
 from telemetry_service import router as telemetry_router
 from automation_service import router as automation_router
 from alert_service import router as alert_router

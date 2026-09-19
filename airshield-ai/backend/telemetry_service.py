@@ -52,7 +52,7 @@ def fetch_live_meteorology(lat=DELHI_LAT, lon=DELHI_LON):
             humidity = m_data.get("relative_humidity_2m", humidity)
             wind_speed = m_data.get("wind_speed_10m", wind_speed)
             pressure = m_data.get("surface_pressure", pressure)
-    except Exception as e:
+    except Exception:
         pass
 
     try:
@@ -61,7 +61,7 @@ def fetch_live_meteorology(lat=DELHI_LAT, lon=DELHI_LON):
             a_data = a_res.json().get("current", {})
             pm25 = a_data.get("pm2_5", pm25)
             pm10 = a_data.get("pm10", pm10)
-    except Exception as e:
+    except Exception:
         pass
 
     real_aqi = calculate_cpcb_aqi(pm25, pm10)
