@@ -1,3 +1,4 @@
+from advisory_scheduler import start_scheduler, save_subscriber, dispatch_daily_morning_advisory
 from telemetry_service import router as telemetry_router, fetch_live_meteorology
 from telemetry_service import router as telemetry_router
 from automation_service import router as automation_router
@@ -150,3 +151,23 @@ def predict_aqi(lat: float = 28.6469, lon: float = 77.3160, current_pm: float = 
 
 
 
+
+
+@app.on_event("startup")
+def app_startup():
+    start_scheduler()
+
+
+@app.post("/api/automation/schedule-advisory")
+def schedule_advisory(payload: dict):
+    phone = payload.get("phone", "")
+    station = payload.get("station", "Sahibzada Ajit Singh Nagar")
+    if not phone:
+        return {"status": "error", "message": "Phone number is required"}
+    success, msg = save_subscriber(phone, station)
+    return {"status": "success" if success else "info", "message": msg}
+
+@app.post("/api/automation/trigger-test-broadcast")
+def test_broadcast():
+    dispatch_daily_morning_advisory()
+    return {"status": "triggered", "message": "Broadcast executed for active subscribers."}
